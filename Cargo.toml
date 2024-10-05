@@ -1,0 +1,10 @@
+[package]
+name = "cryptopals"
+authors = ["Harry Saunders <33317174+hsaunders1904@users.noreply.github.com>"]
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "cryptopals"
+
+[dependencies]
