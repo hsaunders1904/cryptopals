@@ -1,1 +1,3 @@
 mod set01;
+
+pub use set01::c01::hex_to_b64;
