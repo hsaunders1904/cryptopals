@@ -73,7 +73,7 @@ fn xor_with_char(bytes: &[u8], ch: u8) -> Vec<u8> {
 }
 
 /// Return a score for how likely the chars are to be English text.
-/// The returned scores are between 0 and 1, where 1 is most likely.
+/// The higher the better.
 pub fn score_english_by_frequency<'a, I>(chars: I) -> f64
 where
     I: IntoIterator<Item = &'a u8>,
