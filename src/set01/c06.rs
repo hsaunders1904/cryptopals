@@ -3,8 +3,8 @@ use std::ops::Range;
 use crate::{brute_force_byte_xor_cipher, repeating_xor_cipher, score_english_by_frequency};
 
 pub fn brute_force_repeating_xor(bytes: &[u8], key_size_range: Range<usize>) -> Vec<u8> {
-    // Get a best guess at the key size, by finding the key size for which the
-    // hamming (edit) distance between the first N and second N bytes is the
+    // Get a best guess at the key size by finding the key size for which the
+    // hamming (edit) distance between sets of key-sized blocks is the
     // smallest.
     let key_sizes = sorted_edit_distances(bytes, key_size_range)
         .into_iter()
@@ -29,15 +29,20 @@ pub fn brute_force_repeating_xor(bytes: &[u8], key_size_range: Range<usize>) -> 
     // sufficient statistics to run our single-byte XOR cipher breaker.
     let mut candidate_messages = Vec::new();
     for key_size in key_sizes.take(3) {
-        let mut key = Vec::new();
-        for i in 0..key_size {
-            let mut block = Vec::new();
-            for byte in bytes.iter().skip(i).step_by(key_size) {
-                block.push(*byte);
-            }
-            let key_part = brute_force_byte_xor_cipher(&block).0;
-            key.push(key_part);
-        }
+        let key = (0..key_size)
+            // Transpose the ciphertext to group all bytes that would have
+            // been XOR-ed with the same byte of the key.
+            .map(|byte_idx| {
+                bytes
+                    .iter()
+                    .skip(byte_idx)
+                    .step_by(key_size)
+                    .copied()
+                    .collect::<Vec<_>>()
+            })
+            // Brute force the i-th byte of the key.
+            .map(|blocks| brute_force_byte_xor_cipher(&blocks).0)
+            .collect::<Vec<u8>>();
         candidate_messages.push(repeating_xor_cipher(bytes, &key));
     }
     candidate_messages
@@ -50,27 +55,24 @@ pub fn brute_force_repeating_xor(bytes: &[u8], key_size_range: Range<usize>) -> 
 }
 
 fn sorted_edit_distances(bytes: &[u8], key_size_range: Range<usize>) -> Vec<(f32, usize)> {
-    // TODO: deal with case where len of bytes < 6 * key_size
-    //  Might be nice to work out how many bytes we _can_ check and take a
-    //  minimum of that and something between 4-6.
     let n_bytes_to_compare = 4;
-    debug_assert!(bytes.len() > (n_bytes_to_compare + 2) * key_size_range.end);
-    let mut edit_distance = Vec::with_capacity(key_size_range.len());
-    for key_size in key_size_range {
-        let edit_dist = (0..n_bytes_to_compare)
-            .map(|i| {
-                hamming_distance(
-                    &bytes[(i * key_size)..((i + 1) * key_size)],
-                    &bytes[((i + 1) * key_size)..((i + 2) * key_size)],
-                )
-            })
-            .sum::<u32>() as f32
-            / n_bytes_to_compare as f32
-            / key_size as f32;
-        edit_distance.push((edit_dist, key_size));
-    }
+    let mut edit_distance: Vec<(f32, usize)> = key_size_range
+        .map(|ks| (block_edit_distance(bytes, ks, n_bytes_to_compare), ks))
+        .collect();
     edit_distance.sort_by(|a, b| a.0.total_cmp(&b.0));
     edit_distance
+}
+
+fn block_edit_distance(bytes: &[u8], key_size: usize, n_blocks_to_compare: usize) -> f32 {
+    let bytes_it = bytes.iter().as_slice().chunks(key_size);
+    let bytes_it_displaced = bytes.iter().as_slice().chunks(key_size).skip(1);
+    bytes_it
+        .zip(bytes_it_displaced.skip(1))
+        .take(n_blocks_to_compare)
+        .map(|(a, b)| hamming_distance(a, b))
+        .sum::<u32>() as f32
+        / n_blocks_to_compare as f32
+        / key_size as f32
 }
 
 pub fn hamming_distance(a: &[u8], b: &[u8]) -> u32 {
