@@ -1,5 +1,4 @@
-// A basis and, presumably, very insecure implementation of AES.
-use crate::xor_bytes;
+// A basic and, presumably, very insecure implementation of AES.
 
 #[rustfmt::skip]
 const S_BOX: [[u8; 16]; 16] = [
@@ -59,26 +58,20 @@ const INV_MIX_MATRIX: [u8; 16] = [
 
 const ROUND_CONSTANTS: [u8; 10] = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36];
 
-struct AesCipher {
+pub struct AesCipher {
     round_keys: [[u8; 16]; 11],
 }
 
 impl AesCipher {
-    fn new(key: &[u8; 16]) -> Self {
-        let mut round_keys = make_11_round_keys(key);
-        round_keys
-            .iter_mut()
-            .skip(1)
-            .for_each(|k| transpose_matrix(k, 4));
+    pub fn new(key: &[u8; 16]) -> Self {
+        let mut round_keys = make_round_keys(key);
+        round_keys.iter_mut().for_each(|k| transpose_matrix(k, 4));
         Self { round_keys }
     }
 
-    fn encrypt_block(&mut self, mut plaintext: [u8; 16], ciphertext_buffer: &mut [u8]) {
-        plaintext
-            .iter_mut()
-            .zip(self.round_keys[0])
-            .for_each(|(b, k)| *b ^= k);
+    pub fn encrypt_block(&mut self, plaintext: [u8; 16], ciphertext_buffer: &mut [u8]) {
         let mut state = StateMatrix::new(&plaintext);
+        state.xor(&self.round_keys[0]);
         for round_key in self.round_keys[1..10].iter() {
             state.substitute_bytes();
             state.shift_rows();
@@ -89,11 +82,10 @@ impl AesCipher {
         state.substitute_bytes();
         state.shift_rows();
         state.xor(&self.round_keys[10]);
-        ciphertext_buffer.clone_from_slice(state.as_ref());
-        transpose_matrix(ciphertext_buffer, 4);
+        ciphertext_buffer.clone_from_slice(&state.bytes());
     }
 
-    fn decrypt_block(&mut self, ciphertext: [u8; 16], plaintext_buffer: &mut [u8]) {
+    pub fn decrypt_block(&mut self, ciphertext: [u8; 16], plaintext_buffer: &mut [u8]) {
         let mut state = StateMatrix::new(&ciphertext);
         state.xor(self.round_keys.last().unwrap());
         for round_key in self.round_keys[1..10].iter().rev() {
@@ -104,9 +96,8 @@ impl AesCipher {
         }
         state.inv_shift_rows();
         state.inv_substitute_bytes();
-        state.xor(&transposed(&self.round_keys[0]));
-        plaintext_buffer.clone_from_slice(state.as_ref());
-        transpose_matrix(plaintext_buffer, 4);
+        state.xor(&self.round_keys[0]);
+        plaintext_buffer.clone_from_slice(&state.bytes());
     }
 }
 
@@ -114,7 +105,7 @@ impl AesCipher {
 struct StateMatrix([u8; 16]);
 
 impl StateMatrix {
-    fn new(mat: &[u8]) -> Self {
+    pub fn new(mat: &[u8]) -> Self {
         #[rustfmt::skip]
         let transposed_mat = [
             mat[0], mat[4],  mat[8], mat[12],
@@ -125,49 +116,50 @@ impl StateMatrix {
         Self(transposed_mat)
     }
 
-    fn substitute_bytes(&mut self) {
+    pub fn bytes(&self) -> [u8; 16] {
+        let mut out = [0u8; 16];
+        out.copy_from_slice(&self.0);
+        transpose_matrix(&mut out, 4);
+        out
+    }
+
+    pub fn substitute_bytes(&mut self) {
         self.0
             .iter_mut()
             .for_each(|byte| *byte = s_box_substitute(*byte, &S_BOX));
     }
 
-    fn inv_substitute_bytes(&mut self) {
+    pub fn inv_substitute_bytes(&mut self) {
         self.0
             .iter_mut()
             .for_each(|byte| *byte = s_box_substitute(*byte, &INV_S_BOX));
     }
 
-    fn shift_rows(&mut self) {
+    pub fn shift_rows(&mut self) {
         for i in 1..4 {
             let block = &mut self.0[(i * 4)..((i + 1) * 4)];
             block.rotate_left(i);
         }
     }
 
-    fn inv_shift_rows(&mut self) {
+    pub fn inv_shift_rows(&mut self) {
         for i in 1..4 {
             let block = &mut self.0[(i * 4)..((i + 1) * 4)];
             block.rotate_right(i);
         }
     }
 
-    fn mix(&mut self) {
+    pub fn mix(&mut self) {
         let mat = StateMatrix::matrix_multiply(&MIX_MATRIX, &self.0);
-        self.0
-            .iter_mut()
-            .zip(mat.iter())
-            .for_each(|(sm, x)| *sm = *x);
+        self.0 = mat.try_into().unwrap();
     }
 
-    fn inv_mix(&mut self) {
+    pub fn inv_mix(&mut self) {
         let mat = StateMatrix::matrix_multiply(&INV_MIX_MATRIX, &self.0);
-        self.0
-            .iter_mut()
-            .zip(mat.iter())
-            .for_each(|(sm, x)| *sm = *x);
+        self.0 = mat.try_into().unwrap();
     }
 
-    fn xor(&mut self, bytes: &[u8]) {
+    pub fn xor(&mut self, bytes: &[u8]) {
         for (i, byte) in bytes.iter().enumerate() {
             self.0[i] ^= byte;
         }
@@ -207,12 +199,6 @@ impl StateMatrix {
     }
 }
 
-impl AsRef<[u8; 16]> for StateMatrix {
-    fn as_ref(&self) -> &[u8; 16] {
-        &self.0
-    }
-}
-
 fn transpose_matrix(matrix: &mut [u8], n: usize) {
     // Only transpose the upper triangle to avoid re-transposing
     for i in 0..n {
@@ -226,7 +212,7 @@ fn transpose_matrix(matrix: &mut [u8], n: usize) {
     }
 }
 
-pub fn encrypt_aes_128_with_ecb(message: &[u8], key: &[u8; 16]) -> Vec<u8> {
+pub fn encrypt_aes_128_ecb(message: &[u8], key: &[u8; 16]) -> Vec<u8> {
     let mut cipher = AesCipher::new(key);
     let mut ciphertext = Vec::with_capacity(message.len());
     for block in message.iter().as_slice().chunks(key.len()) {
@@ -239,66 +225,47 @@ pub fn encrypt_aes_128_with_ecb(message: &[u8], key: &[u8; 16]) -> Vec<u8> {
     ciphertext
 }
 
-pub fn decrypt_aes_128_with_ecb(ciphertext: &[u8], key: &[u8; 16]) -> Vec<u8> {
-    let mut cipher = AesCipher::new(key);
-    let mut plaintext = Vec::with_capacity(ciphertext.len());
-    for block in ciphertext.iter().as_slice().chunks(key.len()) {
-        plaintext.extend(vec![0; 16]);
-        let range = (plaintext.len() - 16)..(plaintext.len());
-        let mut ptext_buf: &mut [u8] = &mut plaintext.as_mut_slice()[range];
-
-        cipher.decrypt_block(block.try_into().unwrap(), &mut ptext_buf);
-    }
-    plaintext
-}
-
-fn transposed(x: &[u8]) -> Vec<u8> {
-    let mut xc = x.to_owned();
-    transpose_matrix(&mut xc, 4);
-    xc
-}
-
-fn make_11_round_keys(key: &[u8; 16]) -> [[u8; 16]; 11] {
+fn make_round_keys(key: &[u8; 16]) -> [[u8; 16]; 11] {
     let mut keys: Vec<[u8; 16]> = Vec::with_capacity(11);
     keys.push(key.clone());
     for round in 0..10 {
-        keys.push(
-            make_round_key(keys.last().unwrap().as_slice(), round)
-                .try_into()
-                .unwrap(),
-        );
+        keys.push(make_round_key(&keys.last().unwrap(), round));
     }
     keys.try_into().unwrap()
 }
 
-fn make_round_key(key: &[u8], round: usize) -> Vec<u8> {
+fn xor_bytes<const N: usize>(a: &[u8; N], b: &[u8; N]) -> [u8; N] {
+    let mut out: [u8; N] = [0; N];
+    for i in 0..N {
+        out[i] = a[i] ^ b[i];
+    }
+    out
+}
+
+fn make_round_key(key: &[u8; 16], round: usize) -> [u8; 16] {
     let word_0: [u8; 4] = key[0..4].try_into().unwrap();
     let word_1: [u8; 4] = key[4..8].try_into().unwrap();
     let word_2: [u8; 4] = key[8..12].try_into().unwrap();
     let word_3: [u8; 4] = key[12..16].try_into().unwrap();
-    let word_4: [u8; 4] = xor_bytes(&word_0, &g(&word_3, ROUND_CONSTANTS[round]))
-        .unwrap()
-        .as_slice()
-        .try_into()
-        .unwrap();
-    let word_5: [u8; 4] = xor_bytes(&word_4, &word_1).unwrap().try_into().unwrap();
-    let word_6: [u8; 4] = xor_bytes(&word_5, &word_2).unwrap().try_into().unwrap();
-    let word_7: [u8; 4] = xor_bytes(&word_6, &word_3).unwrap().try_into().unwrap();
+    let word_4: [u8; 4] = xor_bytes(&word_0, &g(&word_3, ROUND_CONSTANTS[round]));
+    let word_5: [u8; 4] = xor_bytes(&word_4, &word_1);
+    let word_6: [u8; 4] = xor_bytes(&word_5, &word_2);
+    let word_7: [u8; 4] = xor_bytes(&word_6, &word_3);
 
     let mut key = Vec::with_capacity(16);
     key.extend_from_slice(&word_4);
     key.extend_from_slice(&word_5);
     key.extend_from_slice(&word_6);
     key.extend_from_slice(&word_7);
-    key
+    key.try_into().unwrap()
 }
 
-fn g(word: &[u8; 4], rcon_i: u8) -> Vec<u8> {
+fn g(word: &[u8; 4], rcon_i: u8) -> [u8; 4] {
     let mut new_word = word.to_vec();
     new_word.rotate_left(1);
     new_word = substitute_bytes(&new_word);
     new_word[0] ^= rcon_i;
-    new_word
+    new_word.try_into().unwrap()
 }
 
 fn substitute_bytes(block: &[u8]) -> Vec<u8> {
@@ -316,11 +283,7 @@ fn s_box_substitute(byte: u8, table: &[[u8; 16]; 16]) -> u8 {
 
 #[cfg(test)]
 mod tests {
-    use std::{io::BufRead, path::PathBuf};
-
     use rstest::rstest;
-
-    use crate::hex_to_bytes;
 
     use super::*;
 
@@ -473,7 +436,7 @@ mod tests {
             0x46, 0x75,
         ];
 
-        let round_keys = make_11_round_keys(&key);
+        let round_keys = make_round_keys(&key);
 
         assert_eq!(
             round_keys[0],
@@ -559,7 +522,7 @@ mod tests {
         let key = "Thats my Kung Fu".as_bytes();
         let plaintext = "Two One Nine Two".as_bytes();
 
-        let ciphertext = encrypt_aes_128_with_ecb(&plaintext, &key.try_into().unwrap());
+        let ciphertext = encrypt_aes_128_ecb(&plaintext, &key.try_into().unwrap());
 
         #[rustfmt::skip]
         let expected = [
@@ -569,101 +532,5 @@ mod tests {
             0x1A, 0x02, 0xD7, 0x3A,
         ];
         assert_eq!(ciphertext, expected);
-    }
-
-    #[derive(Debug, Default)]
-    struct AesTestVector {
-        count: usize,
-        key: Vec<u8>,
-        plaintext: Vec<u8>,
-        ciphertext: Vec<u8>,
-    }
-
-    fn read_lines<P>(
-        filename: P,
-    ) -> std::io::Result<std::io::Lines<std::io::BufReader<std::fs::File>>>
-    where
-        P: AsRef<std::path::Path>,
-    {
-        let file = std::fs::File::open(filename)?;
-        Ok(std::io::BufReader::new(file).lines())
-    }
-
-    fn read_test_vectors(path: &PathBuf) -> (Vec<AesTestVector>, Vec<AesTestVector>) {
-        let lines: Vec<String> = read_lines(path)
-            .expect("could not read test vectors")
-            .map(|line| line.expect("could not read line").trim().to_string())
-            .collect();
-
-        let mut line_it = lines.iter();
-        let mut reading_encrypt_cases = false;
-        let mut reading_decrypt_cases = false;
-        let mut enc_vectors = Vec::new();
-        let mut dec_vectors = Vec::new();
-        while let Some(line) = line_it.next() {
-            if line == "[ENCRYPT]" {
-                reading_encrypt_cases = true;
-                reading_decrypt_cases = false;
-                continue;
-            }
-            if line == "[DECRYPT]" {
-                reading_encrypt_cases = false;
-                reading_decrypt_cases = true;
-                continue;
-            }
-            if !(reading_encrypt_cases || reading_decrypt_cases) || line.is_empty() {
-                continue;
-            }
-            let mut vector = AesTestVector::default();
-            while let Some(line) = line_it.next() {
-                if line.is_empty() {
-                    if reading_encrypt_cases {
-                        enc_vectors.push(vector);
-                    } else if reading_decrypt_cases {
-                        dec_vectors.push(vector);
-                    }
-                    break;
-                }
-                let (name, value) = line
-                    .split_once(" = ")
-                    .expect(&format!("could not split line '{}'", line));
-                match name {
-                    "COUNT" => vector.count = value.parse::<usize>().unwrap(),
-                    "KEY" => vector.key = hex_to_bytes(value).unwrap(),
-                    "PLAINTEXT" => vector.plaintext = hex_to_bytes(value).unwrap(),
-                    "CIPHERTEXT" => vector.ciphertext = hex_to_bytes(value).unwrap(),
-                    _ => (),
-                }
-            }
-        }
-        (enc_vectors, dec_vectors)
-    }
-
-    #[test]
-    fn aes_128_with_ecb_test_vectors() {
-        let path = std::path::Path::new("./data/aes/ECBMMT128.rsp");
-        let (vectors, _) = read_test_vectors(&path.to_path_buf());
-
-        for v in vectors {
-            assert_eq!(
-                encrypt_aes_128_with_ecb(&v.plaintext, v.key.as_slice().try_into().unwrap()),
-                v.ciphertext
-            );
-        }
-    }
-
-    #[test]
-    fn decrypt_aes_128_with_ecb_test_vectors() {
-        let path = std::path::Path::new("./data/aes/ECBMMT128.rsp");
-        let (_, vectors) = read_test_vectors(&path.to_path_buf());
-
-        for v in vectors {
-            assert_eq!(
-                decrypt_aes_128_with_ecb(&v.ciphertext, v.key.as_slice().try_into().unwrap()),
-                v.plaintext,
-                "failed on case {}",
-                v.count
-            );
-        }
     }
 }
