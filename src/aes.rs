@@ -22,11 +22,39 @@ const S_BOX: [[u8; 16]; 16] = [
 ];
 
 #[rustfmt::skip]
+const INV_S_BOX: [[u8; 16]; 16] = [
+    [ 82,   9, 106, 213,  48,  54, 165,  56, 191,  64, 163, 158, 129, 243, 215, 251],
+    [124, 227,  57, 130, 155,  47, 255, 135,  52, 142,  67,  68, 196, 222, 233, 203],
+    [ 84, 123, 148,  50, 166, 194,  35,  61, 238,  76, 149,  11,  66, 250, 195,  78],
+    [  8,  46, 161, 102,  40, 217,  36, 178, 118,  91, 162,  73, 109, 139, 209,  37],
+    [114, 248, 246, 100, 134, 104, 152,  22, 212, 164,  92, 204,  93, 101, 182, 146],
+    [108, 112,  72,  80, 253, 237, 185, 218,  94,  21,  70,  87, 167, 141, 157, 132],
+    [144, 216, 171,   0, 140, 188, 211,  10, 247, 228,  88,   5, 184, 179,  69,   6],
+    [208,  44,  30, 143, 202,  63,  15,   2, 193, 175, 189,   3,   1,  19, 138, 107],
+    [ 58, 145,  17,  65,  79, 103, 220, 234, 151, 242, 207, 206, 240, 180, 230, 115],
+    [150, 172, 116,  34, 231, 173,  53, 133, 226, 249,  55, 232,  28, 117, 223, 110],
+    [ 71, 241,  26, 113,  29,  41, 197, 137, 111, 183,  98,  14, 170,  24, 190,  27],
+    [252,  86,  62,  75, 198, 210, 121,  32, 154, 219, 192, 254, 120, 205,  90, 244],
+    [ 31, 221, 168,  51, 136,   7, 199,  49, 177,  18,  16,  89,  39, 128, 236,  95],
+    [ 96,  81, 127, 169,  25, 181,  74,  13,  45, 229, 122, 159, 147, 201, 156, 239],
+    [160, 224,  59,  77, 174,  42, 245, 176, 200, 235, 187,  60, 131,  83, 153,  97],
+    [ 23,  43,   4, 126, 186, 119, 214,  38, 225, 105,  20,  99,  85,  33,  12, 125]
+];
+
+#[rustfmt::skip]
 const MIX_MATRIX: [u8; 16] = [
     2, 3, 1, 1,
     1, 2, 3, 1,
     1, 1, 2, 3,
-    3, 1, 1, 2
+    3, 1, 1, 2,
+];
+
+#[rustfmt::skip]
+const INV_MIX_MATRIX: [u8; 16] = [
+    14, 11, 13, 9,
+     9, 14, 11, 13,
+    13,  9, 14, 11,
+    11, 13,  9, 14
 ];
 
 const ROUND_CONSTANTS: [u8; 10] = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36];
@@ -60,9 +88,25 @@ impl AesCipher {
         // No mix stage in the final round.
         state.substitute_bytes();
         state.shift_rows();
-        state.xor(&self.round_keys[10].as_slice());
+        state.xor(&self.round_keys[10]);
         ciphertext_buffer.clone_from_slice(state.as_ref());
         transpose_matrix(ciphertext_buffer, 4);
+    }
+
+    fn decrypt_block(&mut self, ciphertext: [u8; 16], plaintext_buffer: &mut [u8]) {
+        let mut state = StateMatrix::new(&ciphertext);
+        state.xor(self.round_keys.last().unwrap());
+        for round_key in self.round_keys[1..10].iter().rev() {
+            state.inv_shift_rows();
+            state.inv_substitute_bytes();
+            state.xor(round_key);
+            state.inv_mix();
+        }
+        state.inv_shift_rows();
+        state.inv_substitute_bytes();
+        state.xor(&transposed(&self.round_keys[0]));
+        plaintext_buffer.clone_from_slice(state.as_ref());
+        transpose_matrix(plaintext_buffer, 4);
     }
 }
 
@@ -84,7 +128,13 @@ impl StateMatrix {
     fn substitute_bytes(&mut self) {
         self.0
             .iter_mut()
-            .for_each(|byte| *byte = s_box_substitute(*byte));
+            .for_each(|byte| *byte = s_box_substitute(*byte, &S_BOX));
+    }
+
+    fn inv_substitute_bytes(&mut self) {
+        self.0
+            .iter_mut()
+            .for_each(|byte| *byte = s_box_substitute(*byte, &INV_S_BOX));
     }
 
     fn shift_rows(&mut self) {
@@ -94,8 +144,23 @@ impl StateMatrix {
         }
     }
 
+    fn inv_shift_rows(&mut self) {
+        for i in 1..4 {
+            let block = &mut self.0[(i * 4)..((i + 1) * 4)];
+            block.rotate_right(i);
+        }
+    }
+
     fn mix(&mut self) {
         let mat = StateMatrix::matrix_multiply(&MIX_MATRIX, &self.0);
+        self.0
+            .iter_mut()
+            .zip(mat.iter())
+            .for_each(|(sm, x)| *sm = *x);
+    }
+
+    fn inv_mix(&mut self) {
+        let mat = StateMatrix::matrix_multiply(&INV_MIX_MATRIX, &self.0);
         self.0
             .iter_mut()
             .zip(mat.iter())
@@ -161,7 +226,7 @@ fn transpose_matrix(matrix: &mut [u8], n: usize) {
     }
 }
 
-pub fn aes_128_with_ecb(message: &[u8], key: &[u8; 16]) -> Vec<u8> {
+pub fn encrypt_aes_128_with_ecb(message: &[u8], key: &[u8; 16]) -> Vec<u8> {
     let mut cipher = AesCipher::new(key);
     let mut ciphertext = Vec::with_capacity(message.len());
     for block in message.iter().as_slice().chunks(key.len()) {
@@ -172,6 +237,25 @@ pub fn aes_128_with_ecb(message: &[u8], key: &[u8; 16]) -> Vec<u8> {
         cipher.encrypt_block(block.try_into().unwrap(), &mut ctext_buf);
     }
     ciphertext
+}
+
+pub fn decrypt_aes_128_with_ecb(ciphertext: &[u8], key: &[u8; 16]) -> Vec<u8> {
+    let mut cipher = AesCipher::new(key);
+    let mut plaintext = Vec::with_capacity(ciphertext.len());
+    for block in ciphertext.iter().as_slice().chunks(key.len()) {
+        plaintext.extend(vec![0; 16]);
+        let range = (plaintext.len() - 16)..(plaintext.len());
+        let mut ptext_buf: &mut [u8] = &mut plaintext.as_mut_slice()[range];
+
+        cipher.decrypt_block(block.try_into().unwrap(), &mut ptext_buf);
+    }
+    plaintext
+}
+
+fn transposed(x: &[u8]) -> Vec<u8> {
+    let mut xc = x.to_owned();
+    transpose_matrix(&mut xc, 4);
+    xc
 }
 
 fn make_11_round_keys(key: &[u8; 16]) -> [[u8; 16]; 11] {
@@ -220,14 +304,14 @@ fn g(word: &[u8; 4], rcon_i: u8) -> Vec<u8> {
 fn substitute_bytes(block: &[u8]) -> Vec<u8> {
     block
         .into_iter()
-        .map(|byte| s_box_substitute(*byte))
+        .map(|byte| s_box_substitute(*byte, &S_BOX))
         .collect()
 }
 
-fn s_box_substitute(byte: u8) -> u8 {
+fn s_box_substitute(byte: u8, table: &[[u8; 16]; 16]) -> u8 {
     let first_nibble = ((0b11110000 & byte) >> 4) as usize;
     let second_nibble = (0b00001111 & byte) as usize;
-    S_BOX[first_nibble][second_nibble]
+    table[first_nibble][second_nibble]
 }
 
 #[cfg(test)]
@@ -264,6 +348,29 @@ mod tests {
     }
 
     #[test]
+    fn state_matrix_inv_byte_substitution() {
+        #[rustfmt::skip]
+        let msg = [
+            0x63, 0xEB, 0x9F, 0xA0,
+            0xC0, 0x2F, 0x93, 0x92,
+            0xAB, 0x30, 0xAF, 0xC7,
+            0x20, 0xCB, 0x2B, 0xA2,
+        ];
+        let mut matrix = StateMatrix(msg);
+
+        matrix.inv_substitute_bytes();
+
+        #[rustfmt::skip]
+        let expected = StateMatrix([
+            0x00, 0x3C, 0x6E, 0x47,
+            0x1F, 0x4E, 0x22, 0x74,
+            0x0E, 0x08, 0x1B, 0x31,
+            0x54, 0x59, 0x0B, 0x1A,
+        ]);
+        assert_eq!(matrix, expected);
+    }
+
+    #[test]
     fn state_matrix_shift_rows() {
         #[rustfmt::skip]
         let mut matrix = StateMatrix([
@@ -286,6 +393,28 @@ mod tests {
     }
 
     #[test]
+    fn state_matrix_inv_shift_rows() {
+        #[rustfmt::skip]
+        let mut matrix = StateMatrix([
+            0x63, 0xEB, 0x9F, 0xA0,
+            0x2F, 0x93, 0x92, 0xC0,
+            0xAF, 0xC7, 0xAB, 0x30,
+            0xA2, 0x20, 0xCB, 0x2B,
+        ]);
+
+        matrix.inv_shift_rows();
+
+        #[rustfmt::skip]
+        let expected = StateMatrix([
+            0x63, 0xEB, 0x9F, 0xA0,
+            0xC0, 0x2F, 0x93, 0x92,
+            0xAB, 0x30, 0xAF, 0xC7,
+            0x20, 0xCB, 0x2B, 0xA2,
+        ]);
+        assert_eq!(matrix, expected);
+    }
+
+    #[test]
     fn state_matrix_mix() {
         #[rustfmt::skip]
         let mut matrix = StateMatrix([
@@ -303,6 +432,28 @@ mod tests {
             0x75, 0xA4, 0x8D, 0x40,
             0xF4, 0x8D, 0x06, 0x7D,
             0x7A, 0x32, 0x0E, 0x5D,
+        ]);
+        assert_eq!(matrix, expected);
+    }
+
+    #[test]
+    fn state_matrix_inv_mix() {
+        #[rustfmt::skip]
+        let mut matrix = StateMatrix([
+            0xBA, 0x84, 0xE8, 0x1B,
+            0x75, 0xA4, 0x8D, 0x40,
+            0xF4, 0x8D, 0x06, 0x7D,
+            0x7A, 0x32, 0x0E, 0x5D,
+        ]);
+
+        matrix.inv_mix();
+
+        #[rustfmt::skip]
+        let expected = StateMatrix([
+            0x63, 0xEB, 0x9F, 0xA0,
+            0x2F, 0x93, 0x92, 0xC0,
+            0xAF, 0xC7, 0xAB, 0x30,
+            0xA2, 0x20, 0xCB, 0x2B,
         ]);
         assert_eq!(matrix, expected);
     }
@@ -408,17 +559,20 @@ mod tests {
         let key = "Thats my Kung Fu".as_bytes();
         let plaintext = "Two One Nine Two".as_bytes();
 
-        let ciphertext = aes_128_with_ecb(&plaintext, &key.try_into().unwrap());
+        let ciphertext = encrypt_aes_128_with_ecb(&plaintext, &key.try_into().unwrap());
 
+        #[rustfmt::skip]
         let expected = [
-            0x29, 0xC3, 0x50, 0x5F, 0x57, 0x14, 0x20, 0xF6, 0x40, 0x22, 0x99, 0xB3, 0x1A, 0x02,
-            0xD7, 0x3A,
+            0x29, 0xC3, 0x50, 0x5F,
+            0x57, 0x14, 0x20, 0xF6,
+            0x40, 0x22, 0x99, 0xB3,
+            0x1A, 0x02, 0xD7, 0x3A,
         ];
         assert_eq!(ciphertext, expected);
     }
 
     #[derive(Debug, Default)]
-    struct EncryptTestVector {
+    struct AesTestVector {
         count: usize,
         key: Vec<u8>,
         plaintext: Vec<u8>,
@@ -435,7 +589,7 @@ mod tests {
         Ok(std::io::BufReader::new(file).lines())
     }
 
-    fn read_test_vectors(path: &PathBuf) -> Vec<EncryptTestVector> {
+    fn read_test_vectors(path: &PathBuf) -> (Vec<AesTestVector>, Vec<AesTestVector>) {
         let lines: Vec<String> = read_lines(path)
             .expect("could not read test vectors")
             .map(|line| line.expect("could not read line").trim().to_string())
@@ -443,23 +597,31 @@ mod tests {
 
         let mut line_it = lines.iter();
         let mut reading_encrypt_cases = false;
-        let mut vectors = Vec::new();
+        let mut reading_decrypt_cases = false;
+        let mut enc_vectors = Vec::new();
+        let mut dec_vectors = Vec::new();
         while let Some(line) = line_it.next() {
             if line == "[ENCRYPT]" {
                 reading_encrypt_cases = true;
+                reading_decrypt_cases = false;
                 continue;
             }
             if line == "[DECRYPT]" {
                 reading_encrypt_cases = false;
+                reading_decrypt_cases = true;
                 continue;
             }
-            if !reading_encrypt_cases || line.is_empty() {
+            if !(reading_encrypt_cases || reading_decrypt_cases) || line.is_empty() {
                 continue;
             }
-            let mut vector = EncryptTestVector::default();
+            let mut vector = AesTestVector::default();
             while let Some(line) = line_it.next() {
                 if line.is_empty() {
-                    vectors.push(vector);
+                    if reading_encrypt_cases {
+                        enc_vectors.push(vector);
+                    } else if reading_decrypt_cases {
+                        dec_vectors.push(vector);
+                    }
                     break;
                 }
                 let (name, value) = line
@@ -474,18 +636,33 @@ mod tests {
                 }
             }
         }
-        vectors
+        (enc_vectors, dec_vectors)
     }
 
     #[test]
     fn aes_128_with_ecb_test_vectors() {
         let path = std::path::Path::new("./data/aes/ECBMMT128.rsp");
-        let vectors = read_test_vectors(&path.to_path_buf());
+        let (vectors, _) = read_test_vectors(&path.to_path_buf());
 
         for v in vectors {
             assert_eq!(
-                aes_128_with_ecb(&v.plaintext, v.key.as_slice().try_into().unwrap()),
+                encrypt_aes_128_with_ecb(&v.plaintext, v.key.as_slice().try_into().unwrap()),
                 v.ciphertext
+            );
+        }
+    }
+
+    #[test]
+    fn decrypt_aes_128_with_ecb_test_vectors() {
+        let path = std::path::Path::new("./data/aes/ECBMMT128.rsp");
+        let (_, vectors) = read_test_vectors(&path.to_path_buf());
+
+        for v in vectors {
+            assert_eq!(
+                decrypt_aes_128_with_ecb(&v.ciphertext, v.key.as_slice().try_into().unwrap()),
+                v.plaintext,
+                "failed on case {}",
+                v.count
             );
         }
     }
