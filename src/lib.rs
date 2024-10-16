@@ -1,5 +1,6 @@
 pub mod aes;
 mod set01;
+mod set02;
 
 pub use set01::c01::{hex_to_b64, hex_to_bytes};
 pub use set01::c02::xor_bytes;
@@ -8,3 +9,4 @@ pub use set01::c04::find_byte_xor_encrypted_string;
 pub use set01::c05::repeating_xor_cipher;
 pub use set01::c06::{brute_force_repeating_xor, hamming_distance};
 pub use set01::c07::decrypt_aes_128_ecb;
+pub use set01::c08::score_aes_ecb_likelihood;
