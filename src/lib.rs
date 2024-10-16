@@ -10,3 +10,5 @@ pub use set01::c05::repeating_xor_cipher;
 pub use set01::c06::{brute_force_repeating_xor, hamming_distance};
 pub use set01::c07::decrypt_aes_128_ecb;
 pub use set01::c08::score_aes_ecb_likelihood;
+
+pub use set02::c09::pkcs7_pad;
