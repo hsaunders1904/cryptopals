@@ -12,6 +12,25 @@ pub fn pkcs7_pad(bytes: &[u8], block_size: u8) -> Vec<u8> {
     out
 }
 
+pub fn pkcs7_unpad(bytes: &mut Vec<u8>) {
+    if let Some(n_pad) = is_pkcs7_padded(bytes) {
+        bytes.truncate(bytes.len() - n_pad as usize);
+    }
+}
+
+fn is_pkcs7_padded(bytes: &[u8]) -> Option<u8> {
+    if let Some(n_pad) = bytes.last() {
+        if *n_pad as usize > bytes.len() {
+            return None;
+        }
+        let padded = &bytes[(bytes.len() - *n_pad as usize)..];
+        if padded.iter().all(|el| el == n_pad) {
+            return Some(*n_pad);
+        }
+    }
+    None
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -28,5 +47,17 @@ mod test {
         let padded = pkcs7_pad(&msg, block_size);
 
         assert_eq!(padded, expected.as_bytes());
+    }
+
+    #[rstest]
+    #[case("YELL", "YELL\x04\x04\x04\x04")]
+    #[case("YELLOWS!!!", "YELLOWS!!!\x02\x02")]
+    #[case("YELLOW SUBMARINE", "YELLOW SUBMARINE\x04\x04\x04\x04")]
+    fn pkcs7_unpad_unpads_message(#[case] expected: &str, #[case] padded: &str) {
+        let mut msg = padded.as_bytes().to_vec();
+
+        pkcs7_unpad(&mut msg);
+
+        assert_eq!(msg, expected.as_bytes());
     }
 }

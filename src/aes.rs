@@ -1,4 +1,5 @@
 // A basic and, presumably, very insecure implementation of AES.
+use crate::xor_bytes;
 
 #[rustfmt::skip]
 const S_BOX: [[u8; 16]; 16] = [
@@ -232,14 +233,6 @@ fn make_round_keys(key: &[u8; 16]) -> [[u8; 16]; 11] {
         keys.push(make_round_key(&keys.last().unwrap(), round));
     }
     keys.try_into().unwrap()
-}
-
-fn xor_bytes<const N: usize>(a: &[u8; N], b: &[u8; N]) -> [u8; N] {
-    let mut out: [u8; N] = [0; N];
-    for i in 0..N {
-        out[i] = a[i] ^ b[i];
-    }
-    out
 }
 
 fn make_round_key(key: &[u8; 16], round: usize) -> [u8; 16] {
