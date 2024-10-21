@@ -1,5 +1,5 @@
 // A basic and, presumably, very insecure implementation of AES.
-use crate::xor_bytes;
+use crate::{pkcs7_pad, xor_bytes};
 
 #[rustfmt::skip]
 const S_BOX: [[u8; 16]; 16] = [
@@ -220,8 +220,12 @@ pub fn encrypt_aes_128_ecb(message: &[u8], key: &[u8; 16]) -> Vec<u8> {
         ciphertext.extend(vec![0; 16]);
         let range = (ciphertext.len() - 16)..(ciphertext.len());
         let mut ctext_buf: &mut [u8] = &mut ciphertext.as_mut_slice()[range];
-
-        cipher.encrypt_block(block.try_into().unwrap(), &mut ctext_buf);
+        if block.len() != 16 {
+            let padded = pkcs7_pad(block, 16);
+            cipher.encrypt_block(padded.try_into().unwrap(), &mut ctext_buf);
+        } else {
+            cipher.encrypt_block(block.try_into().unwrap(), &mut ctext_buf);
+        }
     }
     ciphertext
 }

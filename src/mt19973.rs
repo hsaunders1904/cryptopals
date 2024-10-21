@@ -47,6 +47,22 @@ impl Mt19937 {
         y ^ (y >> L)
     }
 
+    /// Generate a u32 in the given range (inclusive).
+    pub fn generate_in_range(&mut self, min: u32, max: u32) -> u32 {
+        if min == max {
+            return min;
+        }
+        let real_min = min.min(max);
+        let real_max = min.max(max) + 1;
+        let frac = self.generate_float();
+        real_min + ((real_max - real_min) as f32 * frac) as u32
+    }
+
+    /// Generate a float in range [0, 1].
+    pub fn generate_float(&mut self) -> f32 {
+        self.generate() as f32 / u32::MAX as f32
+    }
+
     fn seed_state(mut seed: u32) -> [u32; N] {
         let mut state = [0; N];
         state[0] = seed;
@@ -68,11 +84,34 @@ mod test {
     #[case(0, [2357136044, 2546248239, 3071714933])]
     #[case(19650218, [2325592414, 482149846, 4177211283])]
     #[case(101, [2217915231, 2373142027, 2450998609])]
-    fn mt19937_returns_correct_value_for_seed(#[case] seed: u32, #[case] values: [u32; 3]) {
+    fn generate_returns_correct_value_for_seed(#[case] seed: u32, #[case] values: [u32; 3]) {
         let mut rng = Mt19937::new(seed);
 
         assert_eq!(rng.generate(), values[0]);
         assert_eq!(rng.generate(), values[1]);
         assert_eq!(rng.generate(), values[2]);
+    }
+
+    #[test]
+    fn generate_in_range_returns_value_in_range_with_equal_probability() {
+        let mut rng = Mt19937::new(19650218);
+
+        let mut counts = [0usize; 12];
+        for _ in 0..2000 {
+            let v = rng.generate_in_range(1, 12);
+            assert!(v >= 1);
+            assert!(v <= 12);
+            counts[v as usize - 1] += 1;
+        }
+
+        let p = 1. / 12.;
+        let n = counts.iter().sum::<usize>();
+        let chi_squared = counts
+            .iter()
+            .map(|x| *x as f64 / n as f64)
+            .map(|o| (o - p).powi(2) / p)
+            .sum::<f64>()
+            / (n - 1) as f64;
+        assert!(chi_squared < 1e-5);
     }
 }
