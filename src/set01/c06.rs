@@ -84,7 +84,7 @@ pub fn hamming_distance(a: &[u8], b: &[u8]) -> u32 {
 mod test {
     use super::*;
 
-    use base64::{self, Engine};
+    use crate::base64_decode;
 
     #[test]
     fn hamming_distance_finds_number_of_differing_bits() {
@@ -102,9 +102,7 @@ mod test {
         let b64_ciphertext = std::fs::read_to_string(data_file)
             .unwrap()
             .replace("\n", "");
-        let ciphertext = base64::engine::general_purpose::STANDARD
-            .decode(b64_ciphertext)
-            .unwrap();
+        let ciphertext = base64_decode(&b64_ciphertext).unwrap();
 
         let plaintext = brute_force_repeating_xor(&ciphertext, 8..33);
 

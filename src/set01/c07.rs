@@ -17,7 +17,7 @@ pub fn decrypt_aes_128_ecb(ciphertext: &[u8], key: &[u8; 16]) -> Vec<u8> {
 mod tests {
     use super::*;
 
-    use base64::{self, Engine};
+    use crate::base64_decode;
 
     #[test]
     fn decrypt_text_aes_ecb() {
@@ -25,9 +25,7 @@ mod tests {
         let b64_ciphertext = std::fs::read_to_string(data_file)
             .unwrap()
             .replace("\n", "");
-        let ciphertext = base64::engine::general_purpose::STANDARD
-            .decode(b64_ciphertext)
-            .unwrap();
+        let ciphertext = base64_decode(&b64_ciphertext).unwrap();
         let key: [u8; 16] = "YELLOW SUBMARINE".as_bytes().try_into().unwrap();
 
         let plaintext = decrypt_aes_128_ecb(&ciphertext, &key);

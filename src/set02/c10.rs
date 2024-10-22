@@ -45,16 +45,14 @@ pub fn decrypt_aes_128_cbc(ciphertext: &[u8], key: &[u8; 16], iv: &[u8; 16]) -> 
 mod tests {
     use super::*;
 
-    use base64::{self, Engine};
+    use crate::base64_decode;
 
     fn read_base64_file<P>(path: P) -> Vec<u8>
     where
         P: AsRef<std::path::Path>,
     {
         let b64_ciphertext = std::fs::read_to_string(path).unwrap().replace("\n", "");
-        base64::engine::general_purpose::STANDARD
-            .decode(b64_ciphertext)
-            .unwrap()
+        base64_decode(&b64_ciphertext).unwrap()
     }
 
     #[test]

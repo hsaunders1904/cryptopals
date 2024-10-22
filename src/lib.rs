@@ -1,9 +1,12 @@
 mod aes;
+mod base64;
 mod mt19973;
+
 mod set01;
 mod set02;
 
 pub use aes::{encrypt_aes_128_ecb, AesCipher};
+pub use base64::{base64_decode, base64_encode};
 pub use mt19973::Mt19937;
 
 pub use set01::c01::{hex_to_b64, hex_to_bytes};
