@@ -201,13 +201,10 @@ impl StateMatrix {
 }
 
 fn transpose_matrix(matrix: &mut [u8], n: usize) {
-    // Only transpose the upper triangle to avoid re-transposing
     for i in 0..n {
         for j in i + 1..n {
-            // Calculate indices for the 1D vector
             let idx1 = i * n + j;
             let idx2 = j * n + i;
-            // Swap the elements
             matrix.swap(idx1, idx2);
         }
     }

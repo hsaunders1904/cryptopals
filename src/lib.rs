@@ -20,4 +20,5 @@ pub use set01::c08::score_aes_ecb_likelihood;
 
 pub use set02::c09::pkcs7_pad;
 pub use set02::c10::{decrypt_aes_128_cbc, encrypt_aes_128_cbc};
-pub use set02::c11::{aes_encryption_oracle, EncryptionMode};
+pub use set02::c11::{aes_encryption_oracle, random_bytes, EncryptionMode};
+pub use set02::c12::{byte_at_a_time_aes_ecb_decrypt, EcbOracle};

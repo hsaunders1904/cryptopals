@@ -9,7 +9,7 @@ pub enum EncryptionMode {
     CBC,
 }
 
-fn random_key<const N: usize>() -> [u8; N] {
+pub fn random_bytes<const N: usize>() -> [u8; N] {
     let mut rng = gen_seeded_rng();
     let mut key = [0u8; N];
     key.iter_mut()
@@ -32,7 +32,7 @@ fn random_byte(rng: &mut Mt19937) -> u8 {
 
 /// AES encryption oracle that encrypts with ECB or CBC.
 pub fn aes_encryption_oracle(bytes: &[u8]) -> (Vec<u8>, EncryptionMode) {
-    let key = random_key::<16>();
+    let key = random_bytes::<16>();
     let mut rng = gen_seeded_rng();
     let n_begin_pad = rng.generate_in_range(5, 10) as usize;
     let n_end_pad = rng.generate_in_range(5, 10) as usize;
@@ -43,7 +43,7 @@ pub fn aes_encryption_oracle(bytes: &[u8]) -> (Vec<u8>, EncryptionMode) {
     //  Maybe we need to be using iterators and not slices?
     let plaintext = [begin_pad.as_slice(), bytes, end_pad.as_slice()].concat();
     if rng.generate() & 1 == 0 {
-        let iv = random_key::<16>();
+        let iv = random_bytes::<16>();
         return (
             encrypt_aes_128_cbc(&plaintext, &key, &iv),
             EncryptionMode::CBC,
@@ -62,8 +62,8 @@ mod tests {
 
     #[test]
     fn random_key_generates_different_bytes() {
-        let key_1 = random_key::<16>();
-        let key_2 = random_key::<16>();
+        let key_1 = random_bytes::<16>();
+        let key_2 = random_bytes::<16>();
 
         assert_ne!(key_1, key_2);
     }
