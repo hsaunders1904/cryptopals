@@ -22,3 +22,4 @@ pub use set02::c09::pkcs7_pad;
 pub use set02::c10::{decrypt_aes_128_cbc, encrypt_aes_128_cbc};
 pub use set02::c11::{aes_encryption_oracle, random_bytes, EncryptionMode};
 pub use set02::c12::{byte_at_a_time_aes_ecb_decrypt, EcbOracle};
+pub use set02::c13::{falsify_admin_account_with_ecb_oracle, UserProfile, UserProfileOracle};
