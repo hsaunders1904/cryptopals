@@ -91,7 +91,7 @@ mod test {
         let a = "this is a test".as_bytes();
         let b = "wokka wokka!!!".as_bytes();
 
-        let dist = hamming_distance(&a, &b);
+        let dist = hamming_distance(a, b);
 
         assert_eq!(dist, 37);
     }
@@ -101,13 +101,13 @@ mod test {
         let data_file = std::path::Path::new("./data/set01/c06.b64");
         let b64_ciphertext = std::fs::read_to_string(data_file)
             .unwrap()
-            .replace("\n", "");
+            .replace('\n', "");
         let ciphertext = base64_decode(&b64_ciphertext).unwrap();
 
         let plaintext = brute_force_repeating_xor(&ciphertext, 8..33);
 
         let message = String::from_utf8_lossy(&plaintext).to_string();
-        let mut message_lines = message.trim().split("\n");
+        let mut message_lines = message.trim().split('\n');
         assert_eq!(
             message_lines.next().unwrap(),
             "I'm back and I'm ringin' the bell "

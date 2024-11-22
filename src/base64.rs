@@ -45,21 +45,21 @@ pub fn base64_decode(s: &str) -> Result<Vec<u8>, String> {
         bytes.push(b);
         counter += 1;
     }
-    return Ok(bytes);
+    Ok(bytes)
 }
 
 fn char_to_base64_index(c: u8) -> Result<u8, String> {
-    let c_val = c as u8;
+    let c_val = c;
     // Uppercase letters
-    if 65 <= c_val && c_val <= 96 {
+    if (65..=96).contains(&c_val) {
         return Ok(c_val - 65);
     }
     // Lowercase letters
-    if 97 <= c_val && c_val <= 122 {
+    if (97..=122).contains(&c_val) {
         return Ok(c_val - 97 + 26);
     }
     // Numbers
-    if 48 <= c_val && c_val <= 57 {
+    if (48..=57).contains(&c_val) {
         return Ok(c_val - 48 + 52);
     }
     // +
@@ -108,7 +108,7 @@ impl<'a> Iterator for BitIter<'a> {
             let from_next_byte = self.bytes[byte_idx + 1] >> (10 - bit_offset);
             return Some(from_byte | from_next_byte);
         }
-        return Some(from_byte);
+        Some(from_byte)
     }
 }
 

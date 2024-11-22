@@ -107,7 +107,7 @@ pub fn falsify_admin_account_with_ecb_oracle(oracle: &UserProfileOracle) -> (Str
     .concat();
     // The second block of this ciphertext is the sub-ciphertext of
     // 'admin' + padding.
-    let cut_profile = oracle.profile_for(&String::from_utf8_lossy(&cut_email).to_string());
+    let cut_profile = oracle.profile_for(String::from_utf8_lossy(&cut_email).as_ref());
 
     // Now we generate another user profile ciphertext such that we can
     // take the middle block from our first ciphertext and use it as the
@@ -135,8 +135,8 @@ fn encrypt_user_profile(user: &UserProfile, key: &[u8; 16]) -> Vec<u8> {
 fn parse_query(query: &str) -> HashMap<String, String> {
     let mut query_map = HashMap::new();
     query
-        .split("&")
-        .filter_map(|x| x.split_once("="))
+        .split('&')
+        .filter_map(|x| x.split_once('='))
         .for_each(|(k, v)| {
             query_map.insert(k.to_string(), v.to_string());
         });
@@ -174,7 +174,7 @@ mod tests {
     fn parse_query_parses_query_arguments() {
         let query = "foo=bar&baz=qux&zap=zazzle";
 
-        let parsed = parse_query(&query);
+        let parsed = parse_query(query);
 
         let mut expected = HashMap::new();
         expected.insert("foo".to_string(), "bar".to_string());

@@ -6,9 +6,9 @@ pub fn decrypt_aes_128_ecb(ciphertext: &[u8], key: &[u8; 16]) -> Vec<u8> {
     for block in ciphertext.iter().as_slice().chunks(key.len()) {
         plaintext.extend(vec![0; 16]);
         let range = (plaintext.len() - 16)..(plaintext.len());
-        let mut ptext_buf: &mut [u8] = &mut plaintext.as_mut_slice()[range];
+        let ptext_buf: &mut [u8] = &mut plaintext.as_mut_slice()[range];
 
-        cipher.decrypt_block(block.try_into().unwrap(), &mut ptext_buf);
+        cipher.decrypt_block(block.try_into().unwrap(), ptext_buf);
     }
     pkcs7_unpad(&mut plaintext);
     plaintext
@@ -25,7 +25,7 @@ mod tests {
         let data_file = std::path::Path::new("./data/set01/c07.b64");
         let b64_ciphertext = std::fs::read_to_string(data_file)
             .unwrap()
-            .replace("\n", "");
+            .replace('\n', "");
         let ciphertext = base64_decode(&b64_ciphertext).unwrap();
         let key: [u8; 16] = "YELLOW SUBMARINE".as_bytes().try_into().unwrap();
 

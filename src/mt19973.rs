@@ -15,7 +15,7 @@ const C: u32 = 0xefc60000;
 const F: u32 = 1812433253;
 
 pub struct Mt19937 {
-    state: [u32; N as usize],
+    state: [u32; N],
     state_idx: usize,
 }
 
@@ -66,9 +66,9 @@ impl Mt19937 {
     fn seed_state(mut seed: u32) -> [u32; N] {
         let mut state = [0; N];
         state[0] = seed;
-        for i in 1..N {
+        for (i, state_element) in state.iter_mut().enumerate().skip(1) {
             seed = F.wrapping_mul(seed ^ (seed >> (W - 2))) + i as u32;
-            state[i] = seed;
+            *state_element = seed;
         }
         state
     }

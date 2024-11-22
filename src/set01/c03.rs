@@ -60,7 +60,7 @@ const LETTER_FREQUENCIES: [f64; 26] = [
 
 pub fn brute_force_byte_xor_cipher(bytes: &[u8]) -> (u8, String, f64) {
     let (score, key, message) = (0..=255u8)
-        .map(|ch| (ch, xor_with_char(&bytes, ch)))
+        .map(|ch| (ch, xor_with_char(bytes, ch)))
         .map(|(ch, msg)| (score_english_by_frequency(&msg), ch, msg))
         .filter(|(score, _, _)| !score.is_nan())
         .max_by(|(score_1, _, _), (score_2, _, _)| score_1.total_cmp(score_2))
@@ -83,7 +83,7 @@ where
     let mut n_chars = 0;
     chars.into_iter().map(|c| *c as usize).for_each(|i| {
         n_chars += 1;
-        if 122 >= i && i >= 97 {
+        if (97..=122).contains(&i) {
             if let Some(count) = char_counts.get_mut(i - 97) {
                 n_a_to_z += 1;
                 *count += 1

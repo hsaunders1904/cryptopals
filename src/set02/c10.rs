@@ -14,7 +14,7 @@ pub fn encrypt_aes_128_cbc(plaintext: &[u8], key: &[u8; 16], iv: &[u8; 16]) -> V
         let message_buf: [u8; 16] = if !is_final_block {
             xor_bytes(plaintext_block.try_into().unwrap(), &last_block)
         } else {
-            let padded_block = pkcs7_pad(&plaintext_block, 16);
+            let padded_block = pkcs7_pad(plaintext_block, 16);
             xor_bytes(&padded_block.try_into().unwrap(), &last_block)
         };
         let mut ciphertext_buf = [0u8; 16];
@@ -51,7 +51,7 @@ mod tests {
     where
         P: AsRef<std::path::Path>,
     {
-        let b64_ciphertext = std::fs::read_to_string(path).unwrap().replace("\n", "");
+        let b64_ciphertext = std::fs::read_to_string(path).unwrap().replace('\n', "");
         base64_decode(&b64_ciphertext).unwrap()
     }
 
@@ -64,7 +64,7 @@ mod tests {
         let plaintext = decrypt_aes_128_cbc(&ciphertext, &key, &iv);
 
         let message = String::from_utf8_lossy(&plaintext).to_string();
-        let mut lines = message.trim().split("\n");
+        let mut lines = message.trim().split('\n');
         assert_eq!(
             lines.next().unwrap(),
             "I'm back and I'm ringin' the bell ".to_string()

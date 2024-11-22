@@ -62,7 +62,7 @@ mod test {
         "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t"
     )]
     fn convert_hex_to_base64(#[case] hex: &str, #[case] b64: &str) {
-        assert_eq!(hex_to_b64(&hex).unwrap(), b64);
+        assert_eq!(hex_to_b64(hex).unwrap(), b64);
     }
 
     #[test]

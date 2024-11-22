@@ -27,7 +27,7 @@ mod tests {
         let bytes = message.as_bytes();
         let key = "ICE";
 
-        let ciphertext = repeating_xor_cipher(&bytes, key.as_bytes());
+        let ciphertext = repeating_xor_cipher(bytes, key.as_bytes());
 
         let expected_ciphertext =
             "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a2622632427276527\

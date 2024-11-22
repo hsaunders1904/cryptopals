@@ -13,7 +13,7 @@ pub fn scoring_text_as_english_by_letter_frequency(c: &mut Criterion) {
     let hex = std::fs::read_to_string("./benches/data/lorem_ipsum.hex").unwrap();
     let chars = hex_to_bytes(&hex).unwrap();
     c.bench_function("score_english_by_frequency", |b| {
-        b.iter(|| score_english_by_frequency((&chars).iter()))
+        b.iter(|| score_english_by_frequency(chars.iter()))
     });
 }
 
@@ -21,7 +21,7 @@ pub fn brute_forcing_repeating_xor_cipher(c: &mut Criterion) {
     let data_file = std::path::Path::new("./data/set01/c06.b64");
     let b64_ciphertext = std::fs::read_to_string(data_file)
         .unwrap()
-        .replace("\n", "");
+        .replace('\n', "");
     let ciphertext = base64_decode(&b64_ciphertext).unwrap();
 
     c.bench_function("brute_forcing_repeating_xor_cipher", |b| {

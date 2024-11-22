@@ -19,10 +19,10 @@ pub fn random_bytes<const N: usize>() -> [u8; N] {
 
 fn gen_seeded_rng() -> Mt19937 {
     let seed = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH.into())
+        .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_nanos() as u32;
-    return Mt19937::new(seed);
+    Mt19937::new(seed)
 }
 
 fn random_byte(rng: &mut Mt19937) -> u8 {
@@ -78,7 +78,7 @@ mod tests {
         let plaintext = plaintext_str.as_bytes();
 
         for _ in 0..20 {
-            let (ciphertext, mode) = aes_encryption_oracle(&plaintext);
+            let (ciphertext, mode) = aes_encryption_oracle(plaintext);
             let ecb_score = score_aes_ecb_likelihood(&ciphertext);
             if ecb_score > 1e-5 {
                 assert_eq!(mode, EncryptionMode::ECB);

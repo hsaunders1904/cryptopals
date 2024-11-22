@@ -44,7 +44,7 @@ mod test {
     fn pkcs7_pad_pads_message(#[case] msg: &str, #[case] block_size: u8, #[case] expected: &str) {
         let msg = msg.as_bytes();
 
-        let padded = pkcs7_pad(&msg, block_size);
+        let padded = pkcs7_pad(msg, block_size);
 
         assert_eq!(padded, expected.as_bytes());
     }

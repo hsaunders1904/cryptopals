@@ -24,7 +24,7 @@ impl EcbOracle {
 
 pub fn byte_at_a_time_aes_ecb_decrypt(oracle: &EcbOracle) -> Result<Vec<u8>, String> {
     // Detect the block size used for encrypting the ciphertext.
-    let block_size = detect_block_size(&oracle);
+    let block_size = detect_block_size(oracle);
     if block_size != 16 {
         return Err(format!("unsupported block size '{block_size}' detected"));
     }
@@ -32,7 +32,7 @@ pub fn byte_at_a_time_aes_ecb_decrypt(oracle: &EcbOracle) -> Result<Vec<u8>, Str
     // Make sure the ciphertext was generated using ECB.
     let ecb_score = score_aes_ecb_likelihood(&oracle.encrypt(&b"A".repeat(32)));
     if ecb_score < 1e-5 {
-        return Err(format!("ciphertext not encrypted using ECB"));
+        return Err("ciphertext not encrypted using ECB".to_string());
     }
 
     // Get the length of the secret (which may have some padding)
@@ -52,7 +52,7 @@ pub fn byte_at_a_time_aes_ecb_decrypt(oracle: &EcbOracle) -> Result<Vec<u8>, Str
     // We can repeat this process to crack each byte in turn.
     let mut decrypted_bytes: Vec<u8> = Vec::new();
     for _ in 0..secret_length {
-        if let Some(byte) = crack_next_byte(block_size, &decrypted_bytes, &oracle) {
+        if let Some(byte) = crack_next_byte(block_size, &decrypted_bytes, oracle) {
             decrypted_bytes.push(byte);
         }
     }

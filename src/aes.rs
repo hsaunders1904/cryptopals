@@ -77,7 +77,7 @@ impl AesCipher {
             state.substitute_bytes();
             state.shift_rows();
             state.mix();
-            state.xor(&round_key.as_slice());
+            state.xor(round_key.as_slice());
         }
         // No mix stage in the final round.
         state.substitute_bytes();
@@ -196,7 +196,7 @@ impl StateMatrix {
             }
             b >>= 1;
         }
-        product & 0xFF
+        product
     }
 }
 
@@ -216,12 +216,12 @@ pub fn encrypt_aes_128_ecb(message: &[u8], key: &[u8; 16]) -> Vec<u8> {
     for block in message.iter().as_slice().chunks(key.len()) {
         ciphertext.extend(vec![0; 16]);
         let range = (ciphertext.len() - 16)..(ciphertext.len());
-        let mut ctext_buf: &mut [u8] = &mut ciphertext.as_mut_slice()[range];
+        let ctext_buf: &mut [u8] = &mut ciphertext.as_mut_slice()[range];
         if block.len() != 16 {
             let padded = pkcs7_pad(block, 16);
-            cipher.encrypt_block(padded.try_into().unwrap(), &mut ctext_buf);
+            cipher.encrypt_block(padded.try_into().unwrap(), ctext_buf);
         } else {
-            cipher.encrypt_block(block.try_into().unwrap(), &mut ctext_buf);
+            cipher.encrypt_block(block.try_into().unwrap(), ctext_buf);
         }
     }
     ciphertext
@@ -229,9 +229,9 @@ pub fn encrypt_aes_128_ecb(message: &[u8], key: &[u8; 16]) -> Vec<u8> {
 
 fn make_round_keys(key: &[u8; 16]) -> [[u8; 16]; 11] {
     let mut keys: Vec<[u8; 16]> = Vec::with_capacity(11);
-    keys.push(key.clone());
+    keys.push(*key);
     for round in 0..10 {
-        keys.push(make_round_key(&keys.last().unwrap(), round));
+        keys.push(make_round_key(keys.last().unwrap(), round));
     }
     keys.try_into().unwrap()
 }
@@ -264,7 +264,7 @@ fn g(word: &[u8; 4], rcon_i: u8) -> [u8; 4] {
 
 fn substitute_bytes(block: &[u8]) -> Vec<u8> {
     block
-        .into_iter()
+        .iter()
         .map(|byte| s_box_substitute(*byte, &S_BOX))
         .collect()
 }
@@ -516,7 +516,7 @@ mod tests {
         let key = "Thats my Kung Fu".as_bytes();
         let plaintext = "Two One Nine Two".as_bytes();
 
-        let ciphertext = encrypt_aes_128_ecb(&plaintext, &key.try_into().unwrap());
+        let ciphertext = encrypt_aes_128_ecb(plaintext, &key.try_into().unwrap());
 
         #[rustfmt::skip]
         let expected = [

@@ -9,7 +9,7 @@ pub fn find_byte_xor_encrypted_string(path: std::path::PathBuf) -> Result<String
     let mut best_english_score = 0.;
     let mut best_candidate = String::new();
     if let Ok(lines) = read_lines(&path) {
-        for string in lines.flatten() {
+        for string in lines.map_while(Result::ok) {
             let bytes = hex_to_bytes(string.trim())
                 .map_err(|e| format!("could not decode {string}: {e}"))?;
             let (_, msg, score) = brute_force_byte_xor_cipher(&bytes);
