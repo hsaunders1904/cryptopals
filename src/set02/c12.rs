@@ -1,7 +1,5 @@
 /// Byte-at-a-time ECB decryption (Simple)
-use crate::{encrypt_aes_128_ecb, score_aes_ecb_likelihood};
-
-use super::c09::pkcs7_unpad;
+use crate::{encrypt_aes_128_ecb, pkcs7_unpad, score_aes_ecb_likelihood};
 
 pub struct EcbOracle {
     key: [u8; 16],

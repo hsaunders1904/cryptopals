@@ -18,8 +18,9 @@ pub use set01::c06::{brute_force_repeating_xor, hamming_distance};
 pub use set01::c07::decrypt_aes_128_ecb;
 pub use set01::c08::score_aes_ecb_likelihood;
 
-pub use set02::c09::pkcs7_pad;
+pub use set02::c09::{pkcs7_pad, pkcs7_unpad};
 pub use set02::c10::{decrypt_aes_128_cbc, encrypt_aes_128_cbc};
 pub use set02::c11::{aes_encryption_oracle, random_bytes, EncryptionMode};
 pub use set02::c12::{byte_at_a_time_aes_ecb_decrypt, EcbOracle};
 pub use set02::c13::{falsify_admin_account_with_ecb_oracle, UserProfile, UserProfileOracle};
+pub use set02::c14::{random_prefix_byte_at_a_time_with_aes_ecb_decrypt, EcbRandomPrefixOracle};
