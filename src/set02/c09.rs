@@ -12,7 +12,7 @@ pub fn pkcs7_pad(bytes: &[u8], block_size: u8) -> Vec<u8> {
     out
 }
 
-pub fn pkcs7_unpad(bytes: &mut Vec<u8>) {
+pub fn pkcs7_unpad_unchecked(bytes: &mut Vec<u8>) {
     if let Some(n_pad) = is_pkcs7_padded(bytes) {
         bytes.truncate(bytes.len() - n_pad as usize);
     }
@@ -56,7 +56,7 @@ mod test {
     fn pkcs7_unpad_unpads_message(#[case] expected: &str, #[case] padded: &str) {
         let mut msg = padded.as_bytes().to_vec();
 
-        pkcs7_unpad(&mut msg);
+        pkcs7_unpad_unchecked(&mut msg);
 
         assert_eq!(msg, expected.as_bytes());
     }

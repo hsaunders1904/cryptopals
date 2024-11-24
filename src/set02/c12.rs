@@ -1,5 +1,5 @@
 /// Byte-at-a-time ECB decryption (Simple)
-use crate::{encrypt_aes_128_ecb, pkcs7_unpad, score_aes_ecb_likelihood};
+use crate::{encrypt_aes_128_ecb, pkcs7_unpad_unchecked, score_aes_ecb_likelihood};
 
 pub struct EcbOracle {
     key: [u8; 16],
@@ -54,7 +54,7 @@ pub fn byte_at_a_time_aes_ecb_decrypt(oracle: &EcbOracle) -> Result<Vec<u8>, Str
             decrypted_bytes.push(byte);
         }
     }
-    pkcs7_unpad(&mut decrypted_bytes);
+    pkcs7_unpad_unchecked(&mut decrypted_bytes);
     Ok(decrypted_bytes)
 }
 

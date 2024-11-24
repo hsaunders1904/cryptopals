@@ -1,4 +1,4 @@
-use crate::{aes::AesCipher, set02::c09::pkcs7_unpad};
+use crate::{aes::AesCipher, set02::c09::pkcs7_unpad_unchecked};
 
 pub fn decrypt_aes_128_ecb(ciphertext: &[u8], key: &[u8; 16]) -> Vec<u8> {
     let mut cipher = AesCipher::new(key);
@@ -10,7 +10,7 @@ pub fn decrypt_aes_128_ecb(ciphertext: &[u8], key: &[u8; 16]) -> Vec<u8> {
 
         cipher.decrypt_block(block.try_into().unwrap(), ptext_buf);
     }
-    pkcs7_unpad(&mut plaintext);
+    pkcs7_unpad_unchecked(&mut plaintext);
     plaintext
 }
 

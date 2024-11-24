@@ -1,7 +1,7 @@
 /// Implement CBC mode
 use crate::{aes::AesCipher, pkcs7_pad, xor_bytes};
 
-use super::c09::pkcs7_unpad;
+use super::c09::pkcs7_unpad_unchecked;
 
 pub fn encrypt_aes_128_cbc(plaintext: &[u8], key: &[u8; 16], iv: &[u8; 16]) -> Vec<u8> {
     let mut ciphertext = Vec::with_capacity(plaintext.len() + (plaintext.len() % 16));
@@ -37,7 +37,7 @@ pub fn decrypt_aes_128_cbc(ciphertext: &[u8], key: &[u8; 16], iv: &[u8; 16]) -> 
         message.extend_from_slice(&xor_bytes(&last_block, &message_buf));
         last_block = ciphertext_buf;
     }
-    pkcs7_unpad(&mut message);
+    pkcs7_unpad_unchecked(&mut message);
     message
 }
 

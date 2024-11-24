@@ -1,6 +1,6 @@
 // Byte-at-a-time ECB decryption (Harder)
 
-use crate::{encrypt_aes_128_ecb, pkcs7_unpad, Mt19937};
+use crate::{encrypt_aes_128_ecb, pkcs7_unpad_unchecked, Mt19937};
 
 const BLOCK_SIZE: usize = 16;
 
@@ -45,7 +45,7 @@ pub fn random_prefix_byte_at_a_time_with_aes_ecb_decrypt(
             decrypted_bytes.push(byte);
         }
     }
-    pkcs7_unpad(&mut decrypted_bytes);
+    pkcs7_unpad_unchecked(&mut decrypted_bytes);
     Some(decrypted_bytes)
 }
 
