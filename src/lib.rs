@@ -25,3 +25,4 @@ pub use set02::c12::{byte_at_a_time_aes_ecb_decrypt, EcbOracle};
 pub use set02::c13::{falsify_admin_account_with_ecb_oracle, UserProfile, UserProfileOracle};
 pub use set02::c14::{random_prefix_byte_at_a_time_with_aes_ecb_decrypt, EcbRandomPrefixOracle};
 pub use set02::c15::pkcs7_unpad;
+pub use set02::c16::{forge_admin_cbc_ciphertext_with_bit_flipping_attack, CbcQueryOracle};
