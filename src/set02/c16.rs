@@ -74,7 +74,7 @@ impl CbcQueryOracle {
     }
 
     pub fn decrypt_and_check_admin(&self, ciphertext: &[u8]) -> bool {
-        let plaintext = decrypt_aes_128_cbc(ciphertext, &self.key, &self.iv);
+        let plaintext = decrypt_aes_128_cbc(ciphertext, &self.key, &self.iv).unwrap();
         plaintext
             .split(|x| *x == ';' as u8)
             .find(|args| *args == b"admin=true")

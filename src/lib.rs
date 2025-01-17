@@ -4,6 +4,7 @@ mod mt19973;
 
 mod set01;
 mod set02;
+mod set03;
 
 pub use aes::{encrypt_aes_128_ecb, AesCipher};
 pub use base64::{base64_decode, base64_encode};
@@ -26,3 +27,5 @@ pub use set02::c13::{falsify_admin_account_with_ecb_oracle, UserProfile, UserPro
 pub use set02::c14::{random_prefix_byte_at_a_time_with_aes_ecb_decrypt, EcbRandomPrefixOracle};
 pub use set02::c15::pkcs7_unpad;
 pub use set02::c16::{forge_admin_cbc_ciphertext_with_bit_flipping_attack, CbcQueryOracle};
+
+pub use set03::c17::{cbc_padding_oracle_attack, PaddingOracle};
