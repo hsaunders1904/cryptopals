@@ -29,3 +29,4 @@ pub use set02::c15::pkcs7_unpad;
 pub use set02::c16::{forge_admin_cbc_ciphertext_with_bit_flipping_attack, CbcQueryOracle};
 
 pub use set03::c17::{cbc_padding_oracle_attack, PaddingOracle};
+pub use set03::c18::aes_128_ctr;
