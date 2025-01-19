@@ -183,7 +183,7 @@ fn brute_force_byte(
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     use crate::pkcs7_unpad;

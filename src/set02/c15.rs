@@ -22,7 +22,7 @@ fn is_pkcs7_padded(bytes: &[u8]) -> Option<u8> {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     use rstest::rstest;

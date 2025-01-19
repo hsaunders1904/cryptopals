@@ -49,7 +49,7 @@ pub fn hex_to_bytes(hex: &str) -> Result<Vec<u8>, String> {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     use rstest::rstest;

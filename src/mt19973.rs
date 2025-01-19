@@ -75,7 +75,7 @@ impl Mt19937 {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     use rstest::rstest;

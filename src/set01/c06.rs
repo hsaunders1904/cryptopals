@@ -81,7 +81,7 @@ pub fn hamming_distance(a: &[u8], b: &[u8]) -> u32 {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     use crate::base64_decode;
