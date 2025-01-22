@@ -17,6 +17,14 @@ pub fn random_bytes<const N: usize>() -> [u8; N] {
     key
 }
 
+pub fn random_bytes_with_seed<const N: usize>(seed: u32) -> [u8; N] {
+    let mut rng = Mt19937::new(seed);
+    let mut key = [0u8; N];
+    key.iter_mut()
+        .for_each(|byte| *byte = random_byte(&mut rng));
+    key
+}
+
 fn gen_seeded_rng() -> Mt19937 {
     let seed = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)

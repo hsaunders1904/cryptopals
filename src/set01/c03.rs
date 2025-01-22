@@ -59,12 +59,17 @@ const LETTER_FREQUENCIES: [f64; 26] = [
 ];
 
 pub fn brute_force_byte_xor_cipher(bytes: &[u8]) -> (u8, String, f64) {
-    let (score, key, message) = (0..=255u8)
+    let mut v: Vec<(f64, u8, Vec<u8>)> = (0..=255u8)
         .map(|ch| (ch, xor_with_char(bytes, ch)))
         .map(|(ch, msg)| (score_english_by_frequency(&msg), ch, msg))
         .filter(|(score, _, _)| !score.is_nan())
-        .max_by(|(score_1, _, _), (score_2, _, _)| score_1.total_cmp(score_2))
-        .unwrap();
+        .collect();
+    v.sort_by(|(score1, _, _), (score2, _, _)| score2.total_cmp(score1));
+    if v.len() == 0 {
+        return (0, "".to_string(), 0.0);
+    }
+    let (score, key, message) = v[0].clone();
+
     (key, String::from_utf8_lossy(&message).to_string(), score)
 }
 
@@ -81,13 +86,17 @@ where
     let mut char_counts = [0u64; 26];
     let mut n_a_to_z = 0;
     let mut n_chars = 0;
-    chars.into_iter().map(|c| *c as usize).for_each(|i| {
+    chars.into_iter().map(|c| *c as u8).for_each(|i| {
         n_chars += 1;
         if (97..=122).contains(&i) {
-            if let Some(count) = char_counts.get_mut(i - 97) {
+            if let Some(count) = char_counts.get_mut(i as usize - 97) {
                 n_a_to_z += 1;
                 *count += 1
             }
+        }
+        // Increase weight if we find common punctuation
+        else if [' ', ',', '.', '!', '"', '\''].contains(&(i as char)) {
+            n_a_to_z += 1;
         }
     });
     if n_chars == 0 {
@@ -107,7 +116,7 @@ where
 
 fn chi_squared(counts: &[u64], distribution: &[f64]) -> f64 {
     let n_observations: u64 = counts.iter().sum();
-    if n_observations < 5 {
+    if n_observations == 0 {
         return f64::NAN;
     }
     counts

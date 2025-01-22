@@ -2,14 +2,13 @@ use std::ops::Range;
 
 use crate::{brute_force_byte_xor_cipher, repeating_xor_cipher, score_english_by_frequency};
 
-pub fn brute_force_repeating_xor(bytes: &[u8], key_size_range: Range<usize>) -> Vec<u8> {
+pub fn brute_force_repeating_xor(bytes: &[u8], key_size_range: Range<usize>) -> (Vec<u8>, Vec<u8>) {
     // Get a best guess at the key size by finding the key size for which the
     // hamming (edit) distance between sets of key-sized blocks is the
     // smallest.
     let key_sizes = sorted_edit_distances(bytes, key_size_range)
         .into_iter()
         .map(|x| x.1);
-
     // Loop through our top N candidate key sizes and attempt to break the
     // cipher. We do this by:
     //   - Chunking the ciphertext into key-size blocks.
@@ -28,6 +27,7 @@ pub fn brute_force_repeating_xor(bytes: &[u8], key_size_range: Range<usize>) -> 
     // that were XOR-ed with the same byte together. This provides us with
     // sufficient statistics to run our single-byte XOR cipher breaker.
     let mut candidate_messages = Vec::new();
+    let mut keys = Vec::new();
     for key_size in key_sizes.take(3) {
         let key = (0..key_size)
             // Transpose the ciphertext to group all bytes that would have
@@ -44,14 +44,16 @@ pub fn brute_force_repeating_xor(bytes: &[u8], key_size_range: Range<usize>) -> 
             .map(|blocks| brute_force_byte_xor_cipher(&blocks).0)
             .collect::<Vec<u8>>();
         candidate_messages.push(repeating_xor_cipher(bytes, &key));
+        keys.push(key);
     }
-    candidate_messages
+
+    let best_candidate = candidate_messages
         .iter()
-        .map(|msg| (score_english_by_frequency(msg), msg))
+        .zip(keys.iter())
+        .map(|(msg, key)| (score_english_by_frequency(msg), msg, key))
         .max_by(|a, b| a.0.total_cmp(&b.0))
-        .unwrap()
-        .1
-        .to_vec()
+        .unwrap();
+    (best_candidate.1.to_vec(), best_candidate.2.to_vec())
 }
 
 fn sorted_edit_distances(bytes: &[u8], key_size_range: Range<usize>) -> Vec<(f32, usize)> {
@@ -104,7 +106,7 @@ mod tests {
             .replace('\n', "");
         let ciphertext = base64_decode(&b64_ciphertext).unwrap();
 
-        let plaintext = brute_force_repeating_xor(&ciphertext, 8..33);
+        let plaintext = brute_force_repeating_xor(&ciphertext, 8..33).0;
 
         let message = String::from_utf8_lossy(&plaintext).to_string();
         let mut message_lines = message.trim().split('\n');

@@ -21,7 +21,7 @@ pub use set01::c08::score_aes_ecb_likelihood;
 
 pub use set02::c09::{pkcs7_pad, pkcs7_unpad_unchecked};
 pub use set02::c10::{decrypt_aes_128_cbc, encrypt_aes_128_cbc};
-pub use set02::c11::{aes_encryption_oracle, random_bytes, EncryptionMode};
+pub use set02::c11::{aes_encryption_oracle, random_bytes, random_bytes_with_seed, EncryptionMode};
 pub use set02::c12::{byte_at_a_time_aes_ecb_decrypt, EcbOracle};
 pub use set02::c13::{falsify_admin_account_with_ecb_oracle, UserProfile, UserProfileOracle};
 pub use set02::c14::{random_prefix_byte_at_a_time_with_aes_ecb_decrypt, EcbRandomPrefixOracle};
@@ -30,3 +30,4 @@ pub use set02::c16::{forge_admin_cbc_ciphertext_with_bit_flipping_attack, CbcQue
 
 pub use set03::c17::{cbc_padding_oracle_attack, PaddingOracle};
 pub use set03::c18::aes_128_ctr;
+pub use set03::c19::brute_force_reused_nonce_aes_ctr_ciphertexts;
