@@ -30,3 +30,4 @@ pub use set03::c17::{cbc_padding_oracle_attack, PaddingOracle};
 pub use set03::c18::aes_128_ctr;
 pub use set03::c19::brute_force_reused_nonce_aes_ctr_ciphertexts;
 pub use set03::c21::Mt19937;
+pub use set03::c22::break_time_dependent_mt19937_seed;
