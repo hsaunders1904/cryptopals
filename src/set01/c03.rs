@@ -65,7 +65,7 @@ pub fn brute_force_byte_xor_cipher(bytes: &[u8]) -> (u8, String, f64) {
         .filter(|(score, _, _)| !score.is_nan())
         .collect();
     v.sort_by(|(score1, _, _), (score2, _, _)| score2.total_cmp(score1));
-    if v.len() == 0 {
+    if v.is_empty() {
         return (0, "".to_string(), 0.0);
     }
     let (score, key, message) = v[0].clone();
@@ -86,7 +86,7 @@ where
     let mut char_counts = [0u64; 26];
     let mut n_a_to_z = 0;
     let mut n_chars = 0;
-    chars.into_iter().map(|c| *c as u8).for_each(|i| {
+    chars.into_iter().copied().for_each(|i| {
         n_chars += 1;
         if (97..=122).contains(&i) {
             if let Some(count) = char_counts.get_mut(i as usize - 97) {

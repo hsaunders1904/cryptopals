@@ -37,8 +37,8 @@ pub fn forge_admin_cbc_ciphertext_with_bit_flipping_attack(oracle: &CbcQueryOrac
     ]
     .concat();
     ciphertext_xor.resize(ciphertext.len(), 0u8);
-    let forged_ciphertext = xor_slices(&ciphertext, &ciphertext_xor).unwrap();
-    forged_ciphertext
+    
+    xor_slices(&ciphertext, &ciphertext_xor).unwrap()
 }
 
 pub struct CbcQueryOracle {
@@ -57,7 +57,7 @@ impl CbcQueryOracle {
     pub fn encrypt(&self, msg: &[u8]) -> Vec<u8> {
         let plaintext = [
             CbcQueryOracle::QUERY_PREFIX,
-            msg.into_iter()
+            msg.iter()
                 .filter_map(|el| {
                     if [b'"', b';'].contains(el) {
                         None
@@ -76,9 +76,8 @@ impl CbcQueryOracle {
     pub fn decrypt_and_check_admin(&self, ciphertext: &[u8]) -> bool {
         let plaintext = decrypt_aes_128_cbc(ciphertext, &self.key, &self.iv).unwrap();
         plaintext
-            .split(|x| *x == ';' as u8)
-            .find(|args| *args == b"admin=true")
-            .is_some()
+            .split(|x| *x == b';')
+            .any(|args| args == b"admin=true")
     }
 }
 

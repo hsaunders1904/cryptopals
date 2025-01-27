@@ -14,7 +14,7 @@ pub fn brute_force_reused_nonce_aes_ctr_ciphertexts(ciphertexts: &[&[u8]]) -> Ve
 
     let keystream: Vec<u8> = transposed_ciphertexts
         .iter()
-        .map(|transposed_ciphertext| brute_force_byte_xor_cipher(&transposed_ciphertext).0)
+        .map(|transposed_ciphertext| brute_force_byte_xor_cipher(transposed_ciphertext).0)
         .collect();
 
     ciphertexts
@@ -50,7 +50,7 @@ mod tests {
         let key = random_bytes_with_seed::<16>(101);
         let ciphertexts: Vec<Vec<u8>> = plaintexts
             .iter()
-            .map(|plaintext| aes_128_ctr(&plaintext, &key, &nonce, 0))
+            .map(|plaintext| aes_128_ctr(plaintext, &key, &nonce, 0))
             .collect();
 
         let broken_plaintexts = brute_force_reused_nonce_aes_ctr_ciphertexts(

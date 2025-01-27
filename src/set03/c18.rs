@@ -52,7 +52,7 @@ mod tests {
         let nonce = [0u8; 8];
         let encoded_ciphertext =
             "L77na/nrFsKvynd6HzOoG7GHTLXsTVu9qvY/2syLXzhPweyyMTJULu/6/kXX0KSvoOLSFQ==";
-        let ciphertext = base64_decode(&encoded_ciphertext).unwrap();
+        let ciphertext = base64_decode(encoded_ciphertext).unwrap();
 
         let plaintext = aes_128_ctr(&ciphertext, key, &nonce, initial_value);
 

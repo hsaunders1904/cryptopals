@@ -152,12 +152,9 @@ fn brute_force_byte(
     current_plaintext: &[u8],
 ) -> Option<u8> {
     let possible_last_bytes: Vec<u8> = (0..=255u8)
-        .filter_map(|j| {
-            let forced_iv = make_forced_iv_block(iv, j, padding_len, &current_plaintext);
-            if oracle.ciphertext_padding_valid(&forced_iv, &ciphertext_block) {
-                return Some(j);
-            }
-            None
+        .filter(|&j| {
+            let forced_iv = make_forced_iv_block(iv, j, padding_len, current_plaintext);
+            oracle.ciphertext_padding_valid(&forced_iv, ciphertext_block)
         })
         .collect();
 
@@ -178,7 +175,7 @@ fn brute_force_byte(
             None
         })
     } else {
-        possible_last_bytes.get(0).copied()
+        possible_last_bytes.first().copied()
     }
 }
 
