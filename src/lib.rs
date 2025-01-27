@@ -1,6 +1,5 @@
 mod aes;
 mod base64;
-mod mt19973;
 
 mod set01;
 mod set02;
@@ -8,7 +7,6 @@ mod set03;
 
 pub use aes::{encrypt_aes_128_ecb, AesCipher};
 pub use base64::{base64_decode, base64_encode};
-pub use mt19973::Mt19937;
 
 pub use set01::c01::{hex_to_b64, hex_to_bytes};
 pub use set01::c02::{xor_bytes, xor_slices};
@@ -31,3 +29,4 @@ pub use set02::c16::{forge_admin_cbc_ciphertext_with_bit_flipping_attack, CbcQue
 pub use set03::c17::{cbc_padding_oracle_attack, PaddingOracle};
 pub use set03::c18::aes_128_ctr;
 pub use set03::c19::brute_force_reused_nonce_aes_ctr_ciphertexts;
+pub use set03::c21::Mt19937;
