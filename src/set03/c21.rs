@@ -27,6 +27,13 @@ impl Mt19937 {
         }
     }
 
+    pub fn new_from_state(state: [u32; N]) -> Self {
+        Self {
+            state,
+            state_idx: 0,
+        }
+    }
+
     pub fn generate(&mut self) -> u32 {
         let k: usize = self.state_idx;
         let mut j: usize = k.checked_sub(N - 1).unwrap_or(k + 1);
