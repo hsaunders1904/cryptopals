@@ -74,7 +74,9 @@ impl Mt19937 {
         let mut state = [0; N];
         state[0] = seed;
         for (i, state_element) in state.iter_mut().enumerate().skip(1) {
-            seed = F.wrapping_mul(seed ^ (seed >> (W - 2))) + i as u32;
+            seed = F
+                .wrapping_mul(seed ^ (seed >> (W - 2)))
+                .wrapping_add(i as u32);
             *state_element = seed;
         }
         state
