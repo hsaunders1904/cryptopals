@@ -1,4 +1,4 @@
-/// Implementation of base64 encode and decode.
+// Implementation of base64 encode and decode.
 
 const BASE64_CHARS: &[u8] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".as_bytes();
@@ -83,7 +83,7 @@ impl<'a> BitIter<'a> {
         Self { bytes, bit_pos: 0 }
     }
 }
-impl<'a> Iterator for BitIter<'a> {
+impl Iterator for BitIter<'_> {
     type Item = u8;
 
     fn next(&mut self) -> Option<Self::Item> {

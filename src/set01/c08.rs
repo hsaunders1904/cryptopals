@@ -1,4 +1,4 @@
-/// Detect AES in ECB mode
+// Detect AES in ECB mode
 
 /// Return a score for how likely some bytes were encrypted using AES-128 ECB.
 ///

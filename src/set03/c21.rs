@@ -1,4 +1,4 @@
-/// MT19937 pseudo-random number generator
+// MT19937 pseudo-random number generator
 
 const N: usize = 624;
 const M: usize = 397;

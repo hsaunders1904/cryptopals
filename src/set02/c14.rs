@@ -76,8 +76,8 @@ fn find_prefix_length(oracle: &EcbRandomPrefixOracle) -> Option<usize> {
     // For two calls to our oracle with differing messages, the ciphertext
     // blocks for the random prefix will be the same. The first block that is
     // not equal in the two ciphertexts, is where the prefix must end.
-    let c1 = oracle.encrypt(&[b'0']);
-    let c2 = oracle.encrypt(&[b'1']);
+    let c1 = oracle.encrypt(b"0");
+    let c2 = oracle.encrypt(b"1");
     let prefix_block_end = c1
         .chunks(BLOCK_SIZE)
         .zip(c2.chunks(BLOCK_SIZE))

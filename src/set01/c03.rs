@@ -1,32 +1,32 @@
-/// In this challenge we are given a ciphertext that was derived by XOR-ing
-/// every byte of message with a character. We must decipher the message and
-/// find the key.
-///
-/// To do this we take a brute force approach and loop over each possible u8
-/// character to give us a candidate message. We must then inspect the
-/// candidates and decide which is most likely to be the original message. We
-/// know the message is in English, so we can use this fact.
-///
-/// To help identify English text, we have a table of expected frequencies of
-/// characters in English. We can count the occurrences of each character in
-/// the message (ignoring characters we don't have statistics for) and
-/// compare them to the expected frequencies/distribution. A Chi-Squared test
-/// gives us a measure of how likely the text is to be in English.
-///
-/// Note that in this solution we ignore uppercase letters instead of
-/// treating them as lowercase. We do this because upper and lowercase
-/// characters only differ by a single and specific bit, e.g,
-///   'A' = 01000001  'X' = 01011000
-///   'a' = 01100001  'x' = 01111000
-/// Because of this, using 'X' as the key would give the same ciphertext as
-/// using 'x', but in uppercase. Hence both ciphertexts would score the same in
-/// our scheme. Obviously this upper-lowercase problem only exists for
-/// characters a-z. The real message can be identified by examining the
-/// punctuation. However, I couldn't find any statistics including punctuation
-/// (although I admit I didn't look very hard), so I took the easy route and
-/// ignored uppercase characters. This might throw our statistics off slightly,
-/// as some letters are bound to be more likely to appear capitalised than
-/// others, but it shouldn't be a significant difference.
+// In this challenge we are given a ciphertext that was derived by XOR-ing
+// every byte of message with a character. We must decipher the message and
+// find the key.
+//
+// To do this we take a brute force approach and loop over each possible u8
+// character to give us a candidate message. We must then inspect the
+// candidates and decide which is most likely to be the original message. We
+// know the message is in English, so we can use this fact.
+//
+// To help identify English text, we have a table of expected frequencies of
+// characters in English. We can count the occurrences of each character in
+// the message (ignoring characters we don't have statistics for) and
+// compare them to the expected frequencies/distribution. A Chi-Squared test
+// gives us a measure of how likely the text is to be in English.
+//
+// Note that in this solution we ignore uppercase letters instead of
+// treating them as lowercase. We do this because upper and lowercase
+// characters only differ by a single and specific bit, e.g,
+//   'A' = 01000001  'X' = 01011000
+//   'a' = 01100001  'x' = 01111000
+// Because of this, using 'X' as the key would give the same ciphertext as
+// using 'x', but in uppercase. Hence both ciphertexts would score the same in
+// our scheme. Obviously this upper-lowercase problem only exists for
+// characters a-z. The real message can be identified by examining the
+// punctuation. However, I couldn't find any statistics including punctuation
+// (although I admit I didn't look very hard), so I took the easy route and
+// ignored uppercase characters. This might throw our statistics off slightly,
+// as some letters are bound to be more likely to appear capitalised than
+// others, but it shouldn't be a significant difference.
 
 // http://practicalcryptography.com/cryptanalysis/letter-frequencies-various-languages/english-letter-frequencies/
 const LETTER_FREQUENCIES: [f64; 26] = [

@@ -1,6 +1,6 @@
-/// In this challenge we are given a file containing 60-character strings.
-/// One of those strings has been encrypted using a single-character XOR. Our
-/// task is to find the encrypted string.
+// In this challenge we are given a file containing 60-character strings.
+// One of those strings has been encrypted using a single-character XOR. Our
+// task is to find the encrypted string.
 use std::io::BufRead;
 
 use crate::{brute_force_byte_xor_cipher, hex_to_bytes};

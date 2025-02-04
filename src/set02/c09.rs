@@ -1,4 +1,4 @@
-/// Implement PKCS#7 padding
+// Implement PKCS#7 padding
 
 pub fn pkcs7_pad(bytes: &[u8], block_size: u8) -> Vec<u8> {
     let n_pad = if bytes.len() % block_size as usize == 0 {

@@ -1,4 +1,4 @@
-/// Byte-at-a-time ECB decryption (Simple)
+// Byte-at-a-time ECB decryption (Simple)
 use crate::{encrypt_aes_128_ecb, pkcs7_unpad_unchecked, score_aes_ecb_likelihood};
 
 pub struct EcbOracle {

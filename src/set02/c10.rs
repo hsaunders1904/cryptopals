@@ -1,4 +1,4 @@
-/// Implement CBC mode
+// Implement CBC mode
 use crate::{aes::AesCipher, pkcs7_pad, pkcs7_unpad, xor_bytes};
 
 pub fn encrypt_aes_128_cbc(plaintext: &[u8], key: &[u8; 16], iv: &[u8; 16]) -> Vec<u8> {

@@ -1,4 +1,4 @@
-/// CBC bitflipping attacks
+// CBC bitflipping attacks
 use crate::{decrypt_aes_128_cbc, encrypt_aes_128_cbc, xor_slices};
 
 pub fn forge_admin_cbc_ciphertext_with_bit_flipping_attack(oracle: &CbcQueryOracle) -> Vec<u8> {
@@ -37,7 +37,7 @@ pub fn forge_admin_cbc_ciphertext_with_bit_flipping_attack(oracle: &CbcQueryOrac
     ]
     .concat();
     ciphertext_xor.resize(ciphertext.len(), 0u8);
-    
+
     xor_slices(&ciphertext, &ciphertext_xor).unwrap()
 }
 

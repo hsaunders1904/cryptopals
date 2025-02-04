@@ -1,4 +1,4 @@
-/// Encrypt a message using a repeating-key XOR cipher.
+// Encrypt a message using a repeating-key XOR cipher.
 
 pub fn repeating_xor_cipher(message: &[u8], key: &[u8]) -> Vec<u8> {
     let mut ciphertext = Vec::with_capacity(message.len());

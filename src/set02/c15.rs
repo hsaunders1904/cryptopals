@@ -1,4 +1,4 @@
-/// PKCS#7 padding validation
+// PKCS#7 padding validation
 
 pub fn pkcs7_unpad(bytes: &mut Vec<u8>) -> Result<(), String> {
     if let Some(n_pad) = is_pkcs7_padded(bytes) {

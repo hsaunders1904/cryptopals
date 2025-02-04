@@ -1,4 +1,4 @@
-/// An ECB/CBC detection oracle
+// An ECB/CBC detection oracle
 use crate::encrypt_aes_128_cbc;
 use crate::encrypt_aes_128_ecb;
 use crate::Mt19937;

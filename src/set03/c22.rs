@@ -2,10 +2,10 @@ use crate::Mt19937;
 
 const MAX_ATTEMPTS: usize = 10_000;
 
-// Find the seed used to generate the given random number.
-// We assume the MT19937 RNG was seeded with a monotonically increasing counter
-// (e.g., UNIX timestamp) and we assume the counter has increased by a
-// relatively small amount since the random number was generated.
+/// Find the seed used to generate the given random number.
+/// We assume the MT19937 RNG was seeded with a monotonically increasing counter
+/// (e.g., UNIX timestamp) and we assume the counter has increased by a
+/// relatively small amount since the random number was generated.
 pub fn break_time_dependent_mt19937_seed(target_random_number: u32, current_counter: u32) -> u32 {
     let mut candidate_seed = current_counter + 1;
     let mut rng = Mt19937::new(candidate_seed);
