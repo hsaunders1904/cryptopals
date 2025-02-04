@@ -32,4 +32,7 @@ pub use set03::c19::brute_force_reused_nonce_aes_ctr_ciphertexts;
 pub use set03::c21::Mt19937;
 pub use set03::c22::break_time_dependent_mt19937_seed;
 pub use set03::c23::clone_mt19937_from_output;
-pub use set03::c24::{mt19937_cipher, recover_seed_from_mt19937_cipher_encrypted_message};
+pub use set03::c24::{
+    detect_time_seeded_mt19973_generated_token, generate_password_reset_token, mt19937_cipher,
+    recover_seed_from_mt19937_cipher_encrypted_message,
+};
