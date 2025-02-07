@@ -4,6 +4,7 @@ mod base64;
 mod set01;
 mod set02;
 mod set03;
+mod set04;
 
 pub use aes::{encrypt_aes_128_ecb, AesCipher};
 pub use base64::{base64_decode, base64_encode};
@@ -36,3 +37,5 @@ pub use set03::c24::{
     detect_time_seeded_mt19973_generated_token, generate_password_reset_token, mt19937_cipher,
     recover_seed_from_mt19937_cipher_encrypted_message,
 };
+
+pub use set04::c25::{edit_aes_ctr_ciphertext, recover_ctr_edit_oracle_plaintext, CtrEditOracle};
