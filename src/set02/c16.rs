@@ -23,11 +23,11 @@ pub fn forge_admin_cbc_ciphertext_with_bit_flipping_attack(oracle: &CbcQueryOrac
     // 'flip block' and our forgery. To see how this works, notice that, when
     // decrypting in CBC, the second block (the block we're trying to forge) is
     // computed using:
-    //    P2 = Dec(C2) ⊕ C1, noting that Dec(C2) = P2
+    //    P2 = Dec(C2) ⊕ C1
     // Let F be our forgery, then we want
     //    F = P2 = C1 ⊕ Dec(C2).
     // Hence, if we make
-    //    C1 := Dec(C2) ⊕ F (which is P2 ⊕ F),
+    //    C1 := Dec(C2) ⊕ F,
     // then we can create the desired forgery.
     let forgery = b";admin=true;mail";
     let forgery_xor = xor_slices(&forgery_block, forgery).unwrap();
