@@ -40,3 +40,4 @@ pub use set03::c24::{
 
 pub use set04::c25::{edit_aes_ctr_ciphertext, recover_ctr_edit_oracle_plaintext, CtrEditOracle};
 pub use set04::c26::{forge_admin_ctr_ciphertext_with_bit_flipping_attack, CtrQueryOracle};
+pub use set04::c27::{recover_key_from_iv_eq_key_cbc_oracle, CbcIvEqKeyQueryOracle};
