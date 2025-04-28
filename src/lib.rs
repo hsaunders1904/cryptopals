@@ -1,5 +1,6 @@
 mod aes;
 mod base64;
+mod sha1;
 
 mod set01;
 mod set02;
@@ -8,6 +9,7 @@ mod set04;
 
 pub use aes::{encrypt_aes_128_ecb, AesCipher};
 pub use base64::{base64_decode, base64_encode};
+pub use sha1::Sha1;
 
 pub use set01::c01::{hex_to_b64, hex_to_bytes};
 pub use set01::c02::{xor_bytes, xor_slices};
