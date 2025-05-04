@@ -10,10 +10,22 @@ pub struct Sha1 {
 
 impl Sha1 {
     pub fn new(input: &[u8]) -> Self {
+        Self::new_with_initialisation_constants(
+            input,
+            INITIALISATION_CONSTANTS,
+            (input.len() as u64) * 8,
+        )
+    }
+
+    pub fn new_with_initialisation_constants(
+        input: &[u8],
+        initialisation_constants: [u32; 5],
+        message_bit_len: u64,
+    ) -> Self {
         Self {
             buffer: input.to_vec(),
-            digest: INITIALISATION_CONSTANTS,
-            message_bit_len: (input.len() as u64) * 8,
+            digest: initialisation_constants,
+            message_bit_len,
         }
     }
 
@@ -29,11 +41,11 @@ impl Sha1 {
             self.process_chunk(&chunk.try_into().unwrap());
         }
 
-        let mut result = [0u8; SHA1_LEN];
-        for (i, &val) in self.digest.iter().enumerate() {
-            result[(i * 4)..((i + 1) * 4)].copy_from_slice(&val.to_be_bytes());
-        }
-        result
+        self.digest
+            .map(|d| d.to_be_bytes())
+            .concat()
+            .try_into()
+            .unwrap()
     }
 
     fn process_chunk(&mut self, chunk: &[u8; 64]) {
