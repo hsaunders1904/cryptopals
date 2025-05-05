@@ -1,8 +1,7 @@
 use crate::Sha1;
 
 pub fn authenticate_message_with_sha1(key: &[u8], message: &[u8]) -> [u8; 20] {
-    let sha1 = Sha1::new(&[key, message].concat());
-    sha1.digest()
+    Sha1::digest_message(&[key, message].concat())
 }
 
 #[cfg(test)]

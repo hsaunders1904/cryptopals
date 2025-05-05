@@ -57,11 +57,10 @@ pub fn keyed_sha1_mac_length_extension_attack(
         //   SHA1(key || original-message || glue-padding || new-message)
         // which will give us a MAC valid under the oracle's scheme.
         let sha1 = Sha1::new_with_initialisation_constants(
-            suffix_forgery,
             sha_digest_state,
-            (key_len as u64 + forged_message.len() as u64) * 8,
+            (key_len as u64 + glue_padded_message.len() as u64) * 8,
         );
-        let forged_mac = sha1.digest();
+        let forged_mac = sha1.update_and_digest(suffix_forgery);
 
         if oracle.check_mac(&forged_message, &forged_mac) {
             return Ok(LengthExtensionForgery {
@@ -79,7 +78,9 @@ fn md_pad(message: &[u8]) -> Vec<u8> {
     let len_mod = (buffer.len() + 8) % 64;
     let pad_len = (64 - len_mod) % 64;
     buffer.extend(std::iter::once(0x80));
-    buffer.extend(std::iter::repeat(0x00).take(pad_len - 1));
+    if pad_len > 0 {
+        buffer.extend(std::iter::repeat(0x00).take(pad_len - 1));
+    }
     buffer.extend_from_slice(&message_bit_len.to_be_bytes());
     buffer
 }
