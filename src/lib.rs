@@ -1,5 +1,6 @@
 mod aes;
 mod base64;
+mod md4;
 mod sha1;
 
 mod set01;
