@@ -56,6 +56,9 @@ impl Sha1 {
             }
             message_offset = bytes_to_copy;
         }
+        if message_offset >= message.len() {
+            return;
+        }
 
         // Loop over the chunks in the message and process full chunks.
         for chunk in message[message_offset..].chunks(BUFFER_SIZE) {
