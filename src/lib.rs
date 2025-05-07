@@ -1,5 +1,6 @@
 mod aes;
 mod base64;
+mod hmac;
 mod md4;
 mod sha1;
 
@@ -10,6 +11,7 @@ mod set04;
 
 pub use aes::{encrypt_aes_128_ecb, AesCipher};
 pub use base64::{base64_decode, base64_encode};
+pub use hmac::HmacSha1;
 pub use md4::Md4;
 pub use sha1::Sha1;
 
