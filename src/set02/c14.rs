@@ -118,7 +118,7 @@ dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg\
 YnkK";
 
     #[test]
-    fn byte_at_a_time_aes_ecb_decrypt_decrypts_message_with_oracle() {
+    fn random_prefix_byte_at_a_time_with_aes_ecb_decrypt_decrypts_message() {
         let key = random_bytes::<16>();
         let seed = 101;
         let decoded_secret = base64_decode(UNKNOWN_STRING).unwrap();
