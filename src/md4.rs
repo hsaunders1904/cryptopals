@@ -10,6 +10,24 @@ pub struct Md4 {
 }
 
 impl Md4 {
+    pub fn new_with_initialisation_constants(
+        initialisation_constants: [u32; 4],
+        message_bit_len: u64,
+    ) -> Self {
+        Self {
+            buffer: [0; BUFFER_SIZE],
+            buffer_len: 0,
+            digest: initialisation_constants,
+            message_bit_len,
+        }
+    }
+
+    pub fn digest_message(message: &[u8]) -> [u8; MD4_SIZE] {
+        let mut hasher = Md4::default();
+        hasher.update(message);
+        hasher.digest()
+    }
+
     pub fn update(&mut self, message: &[u8]) {
         self.message_bit_len += message.len() as u64 * 8;
 
@@ -21,7 +39,7 @@ impl Md4 {
             self.buffer[self.buffer_len..(self.buffer_len + bytes_to_copy)]
                 .copy_from_slice(&message[..bytes_to_copy]);
             self.buffer_len += bytes_to_copy;
-            if BUFFER_SIZE == 64 {
+            if self.buffer_len == BUFFER_SIZE {
                 self.process_chunk();
             }
             message_offset = bytes_to_copy;
@@ -48,6 +66,11 @@ impl Md4 {
             .concat()
             .try_into()
             .unwrap()
+    }
+
+    pub fn update_and_digest(mut self, message: &[u8]) -> [u8; MD4_SIZE] {
+        self.update(message);
+        self.digest()
     }
 
     fn process_chunk(&mut self) {

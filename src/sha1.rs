@@ -18,8 +18,8 @@ impl Sha1 {
     ) -> Self {
         Self {
             buffer: [0u8; BUFFER_SIZE],
-            digest: initialisation_constants,
             buffer_len: 0,
+            digest: initialisation_constants,
             message_bit_len,
         }
     }
@@ -51,7 +51,7 @@ impl Sha1 {
             self.buffer[self.buffer_len..(self.buffer_len + bytes_to_copy)]
                 .copy_from_slice(&message[..bytes_to_copy]);
             self.buffer_len += bytes_to_copy;
-            if BUFFER_SIZE == 64 {
+            if self.buffer_len == BUFFER_SIZE {
                 self.process_chunk();
             }
             message_offset = bytes_to_copy;
