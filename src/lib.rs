@@ -52,3 +52,4 @@ pub use set04::c29::{
     keyed_sha1_mac_length_extension_attack, LengthExtensionForgery, Sha1KeyedMacOracle,
 };
 pub use set04::c30::{keyed_md4_mac_length_extension_attack, Md4KeyedMacOracle};
+pub use set04::c31::{hmac_sha1_timing_attack, server};

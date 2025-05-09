@@ -8,6 +8,9 @@ edition = "2021"
 name = "cryptopals"
 
 [dependencies]
+axum = "0.7"
+reqwest = "0.12"
+tokio = { version = "1", features = ["full"] }
 
 [dev-dependencies]
 criterion = "0.5.1"
@@ -17,3 +20,7 @@ rstest = "0.23.0"
 name = "set01"
 harness = false
 required-features = []
+
+[[bin]]
+name = "c31_hmac_server"
+path = "src/set04/c31/server/main.rs"
