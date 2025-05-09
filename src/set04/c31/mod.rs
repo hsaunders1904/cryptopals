@@ -1,37 +1,63 @@
+// Implement and break HMAC-SHA1 with an artificial timing leak
 pub mod server;
 
+use futures::future::join_all;
 use reqwest::StatusCode;
 
-pub async fn hmac_sha1_timing_attack(file: &str, address: &str) -> Option<[u8; 20]> {
-    let mut candidate_signature = [0u8; 20];
+const HMAC_DIGEST_SIZE: usize = 20;
 
-    for i in 0..candidate_signature.len() {
-        let mut max_time: u128 = 0;
-        let mut timings = [(0, 0); u8::MAX as usize + 1];
-        for (candidate_byte, request_duration) in (0..=u8::MAX).zip(timings.iter_mut()) {
-            candidate_signature[i] = candidate_byte;
-            let signature_hex = bytes_to_hex(&candidate_signature);
-            let uri = format!("{}/test?file={}&signature={}", address, file, signature_hex);
+pub async fn hmac_sha1_timing_attack(
+    file: &str,
+    address: &str,
+    n_workers: usize,
+) -> Option<[u8; HMAC_DIGEST_SIZE]> {
+    let mut signature = [0u8; HMAC_DIGEST_SIZE];
 
-            let req_start = std::time::Instant::now();
-            let req = reqwest::get(uri).await.unwrap();
-            let duration = std::time::Instant::now()
-                .duration_since(req_start)
-                .as_micros();
-            if req.status() == StatusCode::OK {
-                return Some(candidate_signature);
+    for i in 0..HMAC_DIGEST_SIZE {
+        let mut best_byte = 0u8;
+        let mut best_duration = 0u128;
+
+        let candidates: Vec<u8> = (0..=255).collect();
+        for chunk in candidates.chunks(256 / n_workers) {
+            let mut tasks = Vec::with_capacity(chunk.len());
+
+            for &candidate in chunk {
+                let mut sig_try = signature;
+                sig_try[i] = candidate;
+                let hex_sig = bytes_to_hex(&sig_try);
+                let uri = format!("{}/test?file={}&signature={}", address, file, hex_sig);
+
+                let task = tokio::spawn(async move {
+                    let start = tokio::time::Instant::now();
+                    let response = reqwest::get(&uri).await.ok();
+                    let duration = start.elapsed().as_millis();
+                    (candidate, duration, response)
+                });
+
+                tasks.push(task);
             }
 
-            if max_time != 0 && duration > max_time + 25_000 {
-                *request_duration = (duration, candidate_byte);
-                break;
+            let results = join_all(tasks).await;
+            for res in results.into_iter().flatten() {
+                if let (candidate, duration, Some(response)) = res {
+                    if response.status() == StatusCode::OK {
+                        let mut found = signature;
+                        found[i] = candidate;
+                        return Some(found);
+                    }
+
+                    if duration > best_duration {
+                        best_duration = duration;
+                        best_byte = candidate;
+                    }
+                }
             }
-            *request_duration = (duration, candidate_byte);
-            max_time = max_time.max(duration);
         }
-        candidate_signature[i] = timings.iter().max().unwrap().1;
-        println!("candidate_signature: {:?}", candidate_signature);
+
+        signature[i] = best_byte;
+        println!("candidate_signature: {:?}", signature);
     }
+
     None
 }
 
@@ -46,30 +72,24 @@ fn bytes_to_hex(bytes: &[u8]) -> String {
 mod tests {
     use super::*;
 
-    use axum::{routing::get, Router};
-    use tokio::net::TcpListener;
+    use crate::{random_bytes_with_seed, server, HmacSha1};
 
-    async fn spawn_test_server() -> String {
-        let app = Router::new().route("/test", get(server::handle_request));
-        let listener = TcpListener::bind("127.0.0.1:9000").await.unwrap();
-        let addr = listener.local_addr().unwrap();
-        tokio::spawn(async move {
-            axum::serve(listener, app).await.unwrap();
-        });
-        format!("http://{}", addr)
-    }
-
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread", worker_threads = 8)]
     async fn test_valid_signature() {
-        let addr = spawn_test_server().await;
+        // 8 worker threads to match the number of tokio threads. If this isn't
+        // exact, requests end up queuing, which completely ruins the timing of
+        // the requests.
+        let worker_threads = 8;
+        let key = random_bytes_with_seed::<64>(101);
+        let compare_delay = std::time::Duration::from_millis(50);
+        let request_handler = server::HmacSha1RequestHandler::new(&key, compare_delay);
+        let addr = server::spawn_server("127.0.0.1:9000", &request_handler).await;
+        let file = "file";
 
-        use crate::HmacSha1;
-
-        let expected_mac = HmacSha1::digest_message(b"secret", b"file");
+        let expected_mac = HmacSha1::digest_message(&key, file.as_bytes());
         println!("expected_mac: {:?}", expected_mac);
-        // [255, 121, 211, 89, 84, 173, 130, 202, 217, 49, 64, 47, 142, 184, 129, 225, 119, 13, 83, 221]
 
-        let mac = hmac_sha1_timing_attack("file", addr.as_str())
+        let mac = hmac_sha1_timing_attack(file, addr.as_str(), worker_threads)
             .await
             .unwrap();
 

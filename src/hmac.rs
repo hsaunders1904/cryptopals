@@ -5,6 +5,7 @@ const BLOCK_SIZE: usize = 64;
 const O_PAD: [u8; BLOCK_SIZE] = [0x5c; BLOCK_SIZE];
 const I_PAD: [u8; BLOCK_SIZE] = [0x36; BLOCK_SIZE];
 
+#[derive(Debug, Clone)]
 pub struct HmacSha1 {
     inner_sha1: Sha1,
     outer_sha1: Sha1,
@@ -34,6 +35,11 @@ impl HmacSha1 {
 
     pub fn update(&mut self, message: &[u8]) {
         self.inner_sha1.update(message);
+    }
+
+    pub fn update_and_digest(mut self, message: &[u8]) -> [u8; 20] {
+        self.inner_sha1.update(message);
+        self.digest()
     }
 
     pub fn digest(self) -> [u8; 20] {
