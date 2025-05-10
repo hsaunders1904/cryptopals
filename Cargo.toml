@@ -21,7 +21,3 @@ rstest = "0.23.0"
 name = "set01"
 harness = false
 required-features = []
-
-[[bin]]
-name = "c31_hmac_server"
-path = "src/set04/c31/server/main.rs"
