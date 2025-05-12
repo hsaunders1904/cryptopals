@@ -68,6 +68,8 @@ mod tests {
 
     use crate::{random_bytes_with_seed, server, HmacSha1};
 
+    // This takes a minute or two to run, so skip when running tests.
+    #[ignore]
     #[tokio::test(flavor = "multi_thread", worker_threads = 8)]
     async fn test_valid_signature() {
         // Match the number of tokio threads. If this isn't exact, requests can

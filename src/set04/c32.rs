@@ -60,6 +60,8 @@ mod tests {
     use super::*;
     use crate::{random_bytes_with_seed, server, HmacSha1};
 
+    // This takes a long time (like hours), so skip it when running tests.
+    #[ignore]
     #[tokio::test(flavor = "multi_thread", worker_threads = 8)]
     async fn hmac_sha1_timing_attack_generates_valid_mac_for_message_with_short_delay() {
         let key = random_bytes_with_seed::<64>(101);
