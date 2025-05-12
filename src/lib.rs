@@ -53,3 +53,4 @@ pub use set04::c29::{
 };
 pub use set04::c30::{keyed_md4_mac_length_extension_attack, Md4KeyedMacOracle};
 pub use set04::c31::{hmac_sha1_timing_attack, server};
+pub use set04::c32::hmac_sha1_timing_attack_with_rounds;
