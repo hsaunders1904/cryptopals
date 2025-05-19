@@ -4,16 +4,23 @@ use num_bigint::{BigUint, RandBigInt};
 pub struct ModExpKeyPair {
     pub pub_key: BigUint,
     pub priv_key: BigUint,
+    pub p: BigUint,
+    pub g: BigUint,
 }
 
 pub fn generate_modexp_keypair<R: RandBigInt>(
-    p: &BigUint,
-    g: &BigUint,
+    p: BigUint,
+    g: BigUint,
     rng: &mut R,
 ) -> ModExpKeyPair {
-    let priv_key = rng.gen_biguint(p.bits()).modpow(&BigUint::from(1u64), p);
-    let pub_key = g.modpow(&priv_key, p);
-    ModExpKeyPair { pub_key, priv_key }
+    let priv_key = rng.gen_biguint(p.bits()).modpow(&BigUint::from(1u64), &p);
+    let pub_key = g.modpow(&priv_key, &p);
+    ModExpKeyPair {
+        pub_key,
+        priv_key,
+        p,
+        g,
+    }
 }
 
 #[cfg(test)]
@@ -40,8 +47,8 @@ mod tests {
         let g = BigUint::from(2u64);
         let mut rng = rand::rngs::StdRng::from_seed([101; 32]);
 
-        let alice_kp = generate_modexp_keypair(&p, &g, &mut rng);
-        let bob_kp = generate_modexp_keypair(&p, &g, &mut rng);
+        let alice_kp = generate_modexp_keypair(p.clone(), g.clone(), &mut rng);
+        let bob_kp = generate_modexp_keypair(p.clone(), g.clone(), &mut rng);
         let alice_session_key = bob_kp.pub_key.modpow(&alice_kp.priv_key, &p);
         let bob_session_key = alice_kp.pub_key.modpow(&bob_kp.priv_key, &p);
 
