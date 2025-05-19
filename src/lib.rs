@@ -8,6 +8,7 @@ mod set01;
 mod set02;
 mod set03;
 mod set04;
+mod set05;
 
 pub use aes::{encrypt_aes_128_ecb, AesCipher};
 pub use base64::{base64_decode, base64_encode};
@@ -54,3 +55,5 @@ pub use set04::c29::{
 pub use set04::c30::{keyed_md4_mac_length_extension_attack, Md4KeyedMacOracle};
 pub use set04::c31::{hmac_sha1_timing_attack, server};
 pub use set04::c32::hmac_sha1_timing_attack_with_rounds;
+
+pub use set05::c33::{generate_modexp_keypair, ModExpKeyPair};

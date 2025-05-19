@@ -1,4 +1,3 @@
-// Implement and break HMAC-SHA1 with an artificial timing leak
 use crate::{xor_bytes, Sha1};
 
 const BLOCK_SIZE: usize = 64;
