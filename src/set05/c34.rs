@@ -1,12 +1,15 @@
 // Implement a MITM key-fixing attack on Diffie-Hellman with parameter injection
 use num_bigint::BigUint;
 use num_traits::Num;
+use rand::SeedableRng;
 
-use crate::{decrypt_aes_128_cbc, encrypt_aes_128_cbc, ModExpKeyPair, Mt19937, Sha1};
+use crate::{
+    decrypt_aes_128_cbc, encrypt_aes_128_cbc, generate_modexp_keypair, ModExpKeyPair, Mt19937, Sha1,
+};
 
-struct EncryptedMessage {
-    msg: Vec<u8>,
-    iv: [u8; 16],
+pub struct EncryptedMessage {
+    pub msg: Vec<u8>,
+    pub iv: [u8; 16],
 }
 
 pub struct Person {
@@ -16,25 +19,43 @@ pub struct Person {
 }
 
 impl Person {
-    pub fn new(keys: ModExpKeyPair, rng: Mt19937, msg: String) -> Self {
+    pub fn new(mut rng: Mt19937, msg: String, p: BigUint, g: BigUint) -> Self {
+        let keys = Self::generate_keys(&mut rng, p, g);
         Self {
-            keys,
             rng,
+            keys,
             secret_message: msg,
         }
     }
 
-    fn encrypt_message(&mut self, public_key: &BigUint) -> EncryptedMessage {
+    pub fn encrypt_message(&mut self, public_key: &BigUint) -> EncryptedMessage {
         let session_key = self.generate_session_key(public_key);
         let aes_key: [u8; 16] = Sha1::digest_message(&session_key.to_bytes_be())[..16]
             .try_into()
             .unwrap();
-        let iv: [u8; 16] =
-            std::array::from_fn(|_| self.rng.generate_in_range(0, 255).try_into().unwrap());
+        let iv: [u8; 16] = std::array::from_fn(|_| self.rng.generate_in_range(0, 255) as u8);
         EncryptedMessage {
             msg: encrypt_aes_128_cbc(self.secret_message.as_bytes(), &aes_key, &iv),
             iv,
         }
+    }
+
+    pub fn p(&self) -> BigUint {
+        self.keys.p.clone()
+    }
+
+    pub fn public_key(&self) -> BigUint {
+        self.keys.pub_key.clone()
+    }
+
+    pub fn recv_g(&mut self, g: BigUint) {
+        self.keys = Self::generate_keys(&mut self.rng, self.keys.p.clone(), g);
+    }
+
+    fn generate_keys(rng: &mut Mt19937, p: BigUint, g: BigUint) -> ModExpKeyPair {
+        let big_rng_seed: [u8; 32] = std::array::from_fn(|_| rng.generate_in_range(0, 255) as u8);
+        let mut big_rng = rand::rngs::StdRng::from_seed(big_rng_seed);
+        generate_modexp_keypair(p, g, &mut big_rng)
     }
 
     fn generate_session_key(&self, public_key: &BigUint) -> BigUint {
@@ -42,7 +63,7 @@ impl Person {
     }
 }
 
-pub fn simulate_parameter_injection_attack(
+pub fn simulate_dh_parameter_injection_attack(
     alice: &mut Person,
     bob: &mut Person,
 ) -> Result<(Vec<u8>, Vec<u8>), String> {
@@ -88,11 +109,6 @@ pub fn simulate_parameter_injection_attack(
 mod tests {
     use super::*;
 
-    use crate::generate_modexp_keypair;
-
-    use num_traits::Num;
-    use rand::SeedableRng;
-
     #[test]
     fn plaintext_recovered_using_mitm_parameter_injection_attack() {
         let p = BigUint::from_str_radix(
@@ -108,19 +124,20 @@ mod tests {
         )
         .unwrap();
         let g = BigUint::from(2u64);
-        let mut mod_exp_rng = rand::rngs::StdRng::from_seed([101; 32]);
         let mut alice = Person::new(
-            generate_modexp_keypair(p.clone(), g.clone(), &mut mod_exp_rng),
             Mt19937::new(101),
             "Vive la resistance".to_string(),
+            p.clone(),
+            g.clone(),
         );
         let mut bob = Person::new(
-            generate_modexp_keypair(p.clone(), g.clone(), &mut mod_exp_rng),
             Mt19937::new(101),
             "Vive la France".to_string(),
+            p.clone(),
+            g.clone(),
         );
 
-        let (a, b) = simulate_parameter_injection_attack(&mut alice, &mut bob).unwrap();
+        let (a, b) = simulate_dh_parameter_injection_attack(&mut alice, &mut bob).unwrap();
 
         assert_eq!(
             String::from_utf8_lossy(&a),
