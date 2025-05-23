@@ -28,6 +28,8 @@
 // as some letters are bound to be more likely to appear capitalised than
 // others, but it shouldn't be a significant difference.
 
+use rayon::prelude::*;
+
 // http://practicalcryptography.com/cryptanalysis/letter-frequencies-various-languages/english-letter-frequencies/
 const LETTER_FREQUENCIES: [f64; 26] = [
     0.08551690673195275,   // A
@@ -57,90 +59,108 @@ const LETTER_FREQUENCIES: [f64; 26] = [
     0.017213606152473405,  // Y
     0.001137563214703838,  // Z
 ];
+const PUNCTUATION_CHARS: &[char] = &[' ', ',', '.', '!', '?', '\'', '"', ':', ';'];
 
-pub fn brute_force_byte_xor_cipher(bytes: &[u8]) -> (u8, String, f64) {
-    let mut v: Vec<(f64, u8, Vec<u8>)> = (0..=255u8)
-        .map(|ch| (ch, xor_with_char(bytes, ch)))
-        .map(|(ch, msg)| (score_english_by_frequency(&msg), ch, msg))
+pub struct XorCrackResult {
+    pub key: u8,
+    pub message: String,
+    pub score: f64,
+}
+
+pub fn brute_force_byte_xor_cipher(bytes: &[u8]) -> XorCrackResult {
+    let mut candidates: Vec<(f64, u8, Vec<u8>)> = (0..=255u8)
+        .into_par_iter()
+        .map(|key| {
+            let decrypted = xor_with_key(bytes, key);
+            let score = score_english_by_frequency(&decrypted);
+            (score, key, decrypted)
+        })
         .filter(|(score, _, _)| !score.is_nan())
         .collect();
-    v.sort_by(|(score1, _, _), (score2, _, _)| score2.total_cmp(score1));
-    if v.is_empty() {
-        return (0, "".to_string(), 0.0);
-    }
-    let (score, key, message) = v[0].clone();
 
-    (key, String::from_utf8_lossy(&message).to_string(), score)
-}
+    candidates.par_sort_by(|a, b| b.0.total_cmp(&a.0));
 
-fn xor_with_char(bytes: &[u8], ch: u8) -> Vec<u8> {
-    bytes.iter().map(|x| *x ^ ch).collect()
-}
-
-/// Return a score for how likely the chars are to be English text.
-/// The higher the better.
-pub fn score_english_by_frequency<'a, I>(chars: I) -> f64
-where
-    I: IntoIterator<Item = &'a u8>,
-{
-    let mut char_counts = [0u64; 26];
-    let mut n_a_to_z = 0;
-    let mut n_chars = 0;
-    chars.into_iter().copied().for_each(|i| {
-        n_chars += 1;
-        if (97..=122).contains(&i) {
-            if let Some(count) = char_counts.get_mut(i as usize - 97) {
-                n_a_to_z += 1;
-                *count += 1
-            }
+    if let Some((score, key, message)) = candidates.first() {
+        XorCrackResult {
+            key: *key,
+            message: String::from_utf8_lossy(message).to_string(),
+            score: *score,
         }
-        // Increase weight if we find common punctuation
-        else if [' ', ',', '.', '!', '"', '\''].contains(&(i as char)) {
-            n_a_to_z += 1;
+    } else {
+        XorCrackResult {
+            key: 0,
+            message: String::new(),
+            score: 0.0,
         }
-    });
-    if n_chars == 0 {
-        return 0.;
     }
-
-    let inv_score = chi_squared(&char_counts, &LETTER_FREQUENCIES).abs();
-    if inv_score == 0. {
-        return 1.;
-    }
-    // Weight the scores by number of letters in the a-z range. This helps a
-    // lot with shorter strings where the Chi-Square statistics can be a bit
-    // unreliable.
-    let weight = (n_a_to_z as f64) / (n_chars as f64);
-    weight / inv_score
 }
 
-fn chi_squared(counts: &[u64], distribution: &[f64]) -> f64 {
-    let n_observations: u64 = counts.iter().sum();
-    if n_observations == 0 {
+fn xor_with_key(bytes: &[u8], key: u8) -> Vec<u8> {
+    bytes.iter().map(|b| b ^ key).collect()
+}
+
+pub fn score_english_by_frequency(bytes: &[u8]) -> f64 {
+    let mut counts = [0u64; 26];
+    let mut relevant_chars = 0f64;
+
+    for &b in bytes {
+        let ch = (b as char).to_ascii_lowercase();
+        if ch.is_ascii_lowercase() {
+            counts[(ch as u8 - b'a') as usize] += 1;
+            relevant_chars += 1.;
+        } else if PUNCTUATION_CHARS.contains(&ch) {
+            relevant_chars += 0.5;
+        }
+    }
+
+    if bytes.is_empty() {
+        return 0.0;
+    }
+
+    let chi = chi_squared(&counts, &LETTER_FREQUENCIES).abs();
+    if chi == 0.0 {
+        return 1.0;
+    }
+
+    // For short strings, put more weight on the number of relevant characters.
+    // For longer strings, put more weight on the Chi-squared distribution.
+    let weight = relevant_chars / bytes.len() as f64;
+    let chi2_confidence = (bytes.len() as f64 / 40.0).min(1.0);
+    let distribution_score = weight / chi;
+    chi2_confidence * distribution_score + (1.0 - chi2_confidence) * weight
+}
+
+/// Computes the chi-squared score between observed and expected letter frequencies.
+fn chi_squared(observed: &[u64], expected: &[f64]) -> f64 {
+    let total: u64 = observed.iter().sum();
+    if total == 0 {
         return f64::NAN;
     }
-    counts
+
+    let total_f = total as f64;
+    observed
         .iter()
-        .map(|x| (*x as f64 / n_observations as f64)) // normalise
-        .zip(distribution)
-        .map(|(o, p)| (o - p).powi(2) / p)
+        .zip(expected.iter())
+        .map(|(&obs, &exp)| {
+            let expected_count = exp * total_f;
+            (obs as f64 - expected_count).powi(2) / expected_count
+        })
         .sum()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use crate::hex_to_bytes;
 
     #[test]
-    fn brute_force_single_byte_xor_cipher() {
+    fn test_brute_force_xor() {
         let input = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736";
         let bytes = hex_to_bytes(input).unwrap();
 
-        let out = brute_force_byte_xor_cipher(&bytes);
+        let result = brute_force_byte_xor_cipher(&bytes);
 
-        assert_eq!(out.0, 88);
-        assert_eq!(out.1, "Cooking MC's like a pound of bacon".to_string());
+        assert_eq!(result.key, 88);
+        assert_eq!(result.message, "Cooking MC's like a pound of bacon");
     }
 }

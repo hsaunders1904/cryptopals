@@ -321,6 +321,7 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "rand",
+ "rayon",
  "reqwest",
  "rstest",
  "tokio",

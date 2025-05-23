@@ -14,7 +14,7 @@ pub fn brute_force_reused_nonce_aes_ctr_ciphertexts(ciphertexts: &[&[u8]]) -> Ve
 
     let keystream: Vec<u8> = transposed_ciphertexts
         .iter()
-        .map(|transposed_ciphertext| brute_force_byte_xor_cipher(transposed_ciphertext).0)
+        .map(|transposed_ciphertext| brute_force_byte_xor_cipher(transposed_ciphertext).key)
         .collect();
 
     ciphertexts

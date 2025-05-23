@@ -12,10 +12,10 @@ pub fn find_byte_xor_encrypted_string(path: std::path::PathBuf) -> Result<String
         for string in lines.map_while(Result::ok) {
             let bytes = hex_to_bytes(string.trim())
                 .map_err(|e| format!("could not decode {string}: {e}"))?;
-            let (_, msg, score) = brute_force_byte_xor_cipher(&bytes);
-            if score > best_english_score {
-                best_english_score = score;
-                best_candidate = msg;
+            let result = brute_force_byte_xor_cipher(&bytes);
+            if result.score > best_english_score {
+                best_english_score = result.score;
+                best_candidate = result.message;
             }
         }
     } else {

@@ -41,7 +41,7 @@ pub fn brute_force_repeating_xor(bytes: &[u8], key_size_range: Range<usize>) -> 
                     .collect::<Vec<_>>()
             })
             // Brute force the i-th byte of the key.
-            .map(|blocks| brute_force_byte_xor_cipher(&blocks).0)
+            .map(|blocks| brute_force_byte_xor_cipher(&blocks).key)
             .collect::<Vec<u8>>();
         candidate_messages.push(repeating_xor_cipher(bytes, &key));
         keys.push(key);

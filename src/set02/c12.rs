@@ -1,5 +1,8 @@
 // Byte-at-a-time ECB decryption (Simple)
+
 use crate::{encrypt_aes_128_ecb, pkcs7_unpad_unchecked, score_aes_ecb_likelihood};
+
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 pub struct EcbOracle {
     key: [u8; 16],
@@ -28,12 +31,11 @@ pub fn byte_at_a_time_aes_ecb_decrypt(oracle: &EcbOracle) -> Result<Vec<u8>, Str
     }
 
     // Make sure the ciphertext was generated using ECB.
-    let ecb_score = score_aes_ecb_likelihood(&oracle.encrypt(&b"A".repeat(32)));
-    if ecb_score < 1e-5 {
+    let test_ciphertext = oracle.encrypt(&vec![b'A'; block_size * 4]);
+    if score_aes_ecb_likelihood(&test_ciphertext) < 1e-5 {
         return Err("ciphertext not encrypted using ECB".to_string());
     }
 
-    // Get the length of the secret (which may have some padding)
     let secret_length = oracle.encrypt(b"").len();
 
     // Loop over each byte in the ciphertext and brute force it using our
@@ -48,9 +50,9 @@ pub fn byte_at_a_time_aes_ecb_decrypt(oracle: &EcbOracle) -> Result<Vec<u8>, Str
     // earlier. On the next iteration we can use a prefix of length
     // 'block_size - 2' and apply the same idea to crack the second byte.
     // We can repeat this process to crack each byte in turn.
-    let mut decrypted_bytes: Vec<u8> = Vec::new();
+    let mut decrypted_bytes: Vec<u8> = Vec::with_capacity(secret_length);
     for _ in 0..secret_length {
-        if let Some(byte) = crack_next_byte(block_size, &decrypted_bytes, oracle) {
+        if let Some(byte) = decrypt_next_byte(block_size, &decrypted_bytes, oracle) {
             decrypted_bytes.push(byte);
         }
     }
@@ -58,39 +60,42 @@ pub fn byte_at_a_time_aes_ecb_decrypt(oracle: &EcbOracle) -> Result<Vec<u8>, Str
     Ok(decrypted_bytes)
 }
 
-fn crack_next_byte(block_size: usize, decrypted_bytes: &[u8], oracle: &EcbOracle) -> Option<u8> {
+fn decrypt_next_byte(block_size: usize, decrypted_bytes: &[u8], oracle: &EcbOracle) -> Option<u8> {
     let n_prefix_bytes = block_size - (decrypted_bytes.len() % block_size) - 1;
     let prefix = b"A".repeat(n_prefix_bytes);
-
     let crack_len = n_prefix_bytes + decrypted_bytes.len() + 1;
-
     let real_ciphertext = oracle.encrypt(&prefix);
 
-    for i in 0..255u8 {
-        let candidate_msg = [&prefix, decrypted_bytes, &[i]].concat();
-        let fake_ciphertext = oracle.encrypt(&candidate_msg);
-        if fake_ciphertext[..crack_len] == real_ciphertext[..crack_len] {
-            return Some(i);
+    (0u8..=255).into_par_iter().find_map_any(|i| {
+        let mut input = Vec::with_capacity(prefix.len() + decrypted_bytes.len() + 1);
+        input.extend_from_slice(&prefix);
+        input.extend_from_slice(decrypted_bytes);
+        input.push(i);
+        let ciphertext = oracle.encrypt(&input);
+        let candidate_block = &ciphertext[..crack_len];
+        if candidate_block == &real_ciphertext[..crack_len] {
+            Some(i)
+        } else {
+            None
         }
-    }
-    None
+    })
 }
 
 fn detect_block_size(oracle: &EcbOracle) -> usize {
     let initial_len = oracle.encrypt(&[]).len();
     let mut input = vec![b'A'];
-    let mut ciphertext_len = oracle.encrypt(&input).len();
-    while initial_len == ciphertext_len {
+    loop {
+        let new_len = oracle.encrypt(&input).len();
+        if new_len > initial_len {
+            return new_len - initial_len;
+        }
         input.push(b'A');
-        ciphertext_len = oracle.encrypt(&input).len();
     }
-    ciphertext_len - initial_len
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use crate::{base64_decode, random_bytes};
 
     const UNKNOWN_STRING: &str = "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg\
