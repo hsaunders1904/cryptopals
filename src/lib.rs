@@ -3,6 +3,7 @@ mod base64;
 mod hmac;
 mod md4;
 mod sha1;
+mod sha256;
 
 mod set01;
 mod set02;
@@ -15,6 +16,7 @@ pub use base64::{base64_decode, base64_encode};
 pub use hmac::HmacSha1;
 pub use md4::Md4;
 pub use sha1::Sha1;
+pub use sha256::Sha256;
 
 pub use set01::c01::{hex_to_b64, hex_to_bytes};
 pub use set01::c02::{xor_bytes, xor_slices};
