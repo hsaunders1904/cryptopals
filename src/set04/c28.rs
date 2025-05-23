@@ -1,4 +1,4 @@
-use crate::Sha1;
+use crate::{Hasher, Sha1};
 
 pub fn authenticate_message_with_sha1(key: &[u8], message: &[u8]) -> [u8; 20] {
     Sha1::digest_message(&[key, message].concat())

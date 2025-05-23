@@ -1,5 +1,5 @@
 // Break a SHA-1 keyed MAC using length extension
-use crate::{authenticate_message_with_sha1, Sha1};
+use crate::{authenticate_message_with_sha1, Hasher, Sha1};
 
 pub struct Sha1KeyedMacOracle {
     key: Vec<u8>,

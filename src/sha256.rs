@@ -1,3 +1,5 @@
+use crate::Hasher;
+
 const BUFFER_SIZE: usize = 64;
 const INITIALISATION_CONSTANTS: [u32; 8] = [
     0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
@@ -12,36 +14,8 @@ pub struct Sha256 {
     message_bit_len: u64,
 }
 
-impl Sha256 {
-    pub fn new_with_initialisation_constants(
-        initialisation_constants: [u32; 8],
-        message_bit_len: u64,
-    ) -> Self {
-        Self {
-            buffer: [0u8; BUFFER_SIZE],
-            buffer_len: 0,
-            digest: initialisation_constants,
-            message_bit_len,
-        }
-    }
-
-    pub fn digest_message(message: &[u8]) -> [u8; SHA256_LEN] {
-        let mut hasher = Sha256::default();
-        hasher.update(message);
-        hasher.digest()
-    }
-
-    pub fn digest(mut self) -> [u8; SHA256_LEN] {
-        self.md_pad();
-        self.digest
-            .iter()
-            .flat_map(|&word| word.to_be_bytes())
-            .collect::<Vec<_>>()
-            .try_into()
-            .unwrap()
-    }
-
-    pub fn update(&mut self, message: &[u8]) {
+impl Hasher<32> for Sha256 {
+    fn update(&mut self, message: &[u8]) {
         self.message_bit_len += (message.len() as u64) * 8;
 
         let mut offset = 0;
@@ -72,9 +46,28 @@ impl Sha256 {
         }
     }
 
-    pub fn update_and_digest(mut self, message: &[u8]) -> [u8; SHA256_LEN] {
-        self.update(message);
-        self.digest()
+    fn digest(mut self) -> [u8; SHA256_LEN] {
+        self.md_pad();
+        self.digest
+            .iter()
+            .flat_map(|&word| word.to_be_bytes())
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap()
+    }
+}
+
+impl Sha256 {
+    pub fn new_with_initialisation_constants(
+        initialisation_constants: [u32; 8],
+        message_bit_len: u64,
+    ) -> Self {
+        Self {
+            buffer: [0u8; BUFFER_SIZE],
+            buffer_len: 0,
+            digest: initialisation_constants,
+            message_bit_len,
+        }
     }
 
     fn md_pad(&mut self) {

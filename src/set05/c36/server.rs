@@ -1,4 +1,4 @@
-use crate::{generate_modexp_keypair, HmacSha1, ModExpKeyPair, Sha256};
+use crate::{generate_modexp_keypair, Hasher, HmacSha256, ModExpKeyPair, Sha256};
 
 use num_bigint::BigUint;
 use rand::{rngs::StdRng, RngCore};
@@ -47,7 +47,7 @@ impl SrpServer {
     }
 
     pub fn send_user_key(&self, user_id: &str) -> Result<([u8; 16], BigUint), String> {
-        let verifier = self.get_user_verifier(user_id)?;
+        let verifier = self.user_verifier(user_id)?;
         let big_b = (&self.k * &verifier.verifier + &self.keys.pub_key) % &self.keys.p;
         Ok((verifier.salt, big_b))
     }
@@ -59,8 +59,8 @@ impl SrpServer {
         client_mac: &[u8],
     ) -> Result<PasswordVerificationResponse, String> {
         let expected_key = self.compute_session(user_id, user_pub_key)?;
-        let salt = self.get_user_verifier(user_id)?.salt;
-        let expected_mac = HmacSha1::digest_message(&expected_key, &salt);
+        let salt = self.user_verifier(user_id)?.salt;
+        let expected_mac = HmacSha256::digest_message(&expected_key, &salt);
         if client_mac == expected_mac {
             Ok(PasswordVerificationResponse::Ok)
         } else {
@@ -69,7 +69,7 @@ impl SrpServer {
     }
 
     fn compute_session(&self, user_id: &str, user_pub_key: &BigUint) -> Result<[u8; 32], String> {
-        let verifier = self.get_user_verifier(user_id)?;
+        let verifier = self.user_verifier(user_id)?;
         let big_b = (&self.k * &verifier.verifier + &self.keys.pub_key) % &self.keys.p;
         let u_h =
             Sha256::digest_message(&[user_pub_key.to_bytes_be(), big_b.to_bytes_be()].concat());
@@ -79,7 +79,7 @@ impl SrpServer {
         Ok(Sha256::digest_message(&big_s.to_bytes_be()))
     }
 
-    fn get_user_verifier(&self, user_id: &str) -> Result<&Verifier, String> {
+    fn user_verifier(&self, user_id: &str) -> Result<&Verifier, String> {
         self.verifiers
             .get(user_id)
             .ok_or_else(|| format!("No user registered with id '{}'", user_id))

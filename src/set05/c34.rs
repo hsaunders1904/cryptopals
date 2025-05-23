@@ -4,7 +4,8 @@ use num_traits::Num;
 use rand::SeedableRng;
 
 use crate::{
-    decrypt_aes_128_cbc, encrypt_aes_128_cbc, generate_modexp_keypair, ModExpKeyPair, Mt19937, Sha1,
+    decrypt_aes_128_cbc, encrypt_aes_128_cbc, generate_modexp_keypair, Hasher, ModExpKeyPair,
+    Mt19937, Sha1,
 };
 
 pub struct EncryptedMessage {

@@ -1,3 +1,5 @@
+use crate::Hasher;
+
 const BUFFER_SIZE: usize = 64;
 const INITIALISATION_CONSTANTS: [u32; 5] =
     [0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0];
@@ -11,36 +13,8 @@ pub struct Sha1 {
     message_bit_len: u64,
 }
 
-impl Sha1 {
-    pub fn new_with_initialisation_constants(
-        initialisation_constants: [u32; 5],
-        message_bit_len: u64,
-    ) -> Self {
-        Self {
-            buffer: [0u8; BUFFER_SIZE],
-            buffer_len: 0,
-            digest: initialisation_constants,
-            message_bit_len,
-        }
-    }
-
-    pub fn digest_message(message: &[u8]) -> [u8; SHA1_LEN] {
-        let mut hasher = Sha1::default();
-        hasher.update(message);
-        hasher.digest()
-    }
-
-    pub fn digest(mut self) -> [u8; SHA1_LEN] {
-        self.md_pad();
-        self.process_chunk();
-        self.digest
-            .map(|d| d.to_be_bytes())
-            .concat()
-            .try_into()
-            .unwrap()
-    }
-
-    pub fn update(&mut self, message: &[u8]) {
+impl Hasher<20> for Sha1 {
+    fn update(&mut self, message: &[u8]) {
         self.message_bit_len += message.len() as u64 * 8;
 
         // If buffer_len is not 0, then we're part way through a chunk. Get the
@@ -70,9 +44,28 @@ impl Sha1 {
         }
     }
 
-    pub fn update_and_digest(mut self, message: &[u8]) -> [u8; SHA1_LEN] {
-        self.update(message);
-        self.digest()
+    fn digest(mut self) -> [u8; SHA1_LEN] {
+        self.md_pad();
+        self.process_chunk();
+        self.digest
+            .map(|d| d.to_be_bytes())
+            .concat()
+            .try_into()
+            .unwrap()
+    }
+}
+
+impl Sha1 {
+    pub fn new_with_initialisation_constants(
+        initialisation_constants: [u32; 5],
+        message_bit_len: u64,
+    ) -> Self {
+        Self {
+            buffer: [0u8; BUFFER_SIZE],
+            buffer_len: 0,
+            digest: initialisation_constants,
+            message_bit_len,
+        }
     }
 
     fn process_chunk(&mut self) {

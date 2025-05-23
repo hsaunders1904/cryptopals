@@ -1,6 +1,6 @@
 // Implement DH with negotiated groups, and break with malicious "g" parameters
 
-use crate::{decrypt_aes_128_cbc, Person, Sha1};
+use crate::{decrypt_aes_128_cbc, Hasher, Person, Sha1};
 
 use num_bigint::BigUint;
 

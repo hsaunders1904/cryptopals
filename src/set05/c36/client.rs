@@ -1,4 +1,4 @@
-use crate::{generate_modexp_keypair, HmacSha1, ModExpKeyPair, Sha256};
+use crate::{generate_modexp_keypair, Hasher, HmacSha256, ModExpKeyPair, Sha256};
 
 use num_bigint::BigUint;
 use rand::rngs::StdRng;
@@ -41,9 +41,9 @@ impl SrpClient {
         self.password.clone()
     }
 
-    pub fn session_mac(&self, big_b: &BigUint, salt: [u8; 16]) -> [u8; 20] {
+    pub fn session_mac(&self, big_b: &BigUint, salt: [u8; 16]) -> [u8; 32] {
         let session_key = self.compute_session(big_b, salt);
-        HmacSha1::digest_message(&session_key, &salt)
+        HmacSha256::digest_message(&session_key, &salt)
     }
 
     fn compute_session(&self, big_b: &BigUint, salt: [u8; 16]) -> [u8; 32] {
