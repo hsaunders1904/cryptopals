@@ -2,6 +2,8 @@
 
 use crate::{encrypt_aes_128_ecb, pkcs7_unpad_unchecked, Mt19937};
 
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
 const BLOCK_SIZE: usize = 16;
 
 pub struct EcbRandomPrefixOracle {
@@ -62,14 +64,19 @@ fn crack_next_byte(
 
     let real_ciphertext = oracle.encrypt(&prefix);
 
-    for i in 0..255u8 {
-        let candidate_msg = [&prefix, decrypted_bytes, &[i]].concat();
-        let fake_ciphertext = oracle.encrypt(&candidate_msg);
-        if fake_ciphertext[..crack_len] == real_ciphertext[..crack_len] {
-            return Some(i);
+    (0u8..=255).into_par_iter().find_map_any(|i| {
+        let mut input = Vec::with_capacity(prefix.len() + decrypted_bytes.len() + 1);
+        input.extend_from_slice(&prefix);
+        input.extend_from_slice(decrypted_bytes);
+        input.push(i);
+        let ciphertext = oracle.encrypt(&input);
+        let candidate_block = &ciphertext[..crack_len];
+        if candidate_block == &real_ciphertext[..crack_len] {
+            Some(i)
+        } else {
+            None
         }
-    }
-    None
+    })
 }
 
 fn find_prefix_length(oracle: &EcbRandomPrefixOracle) -> Option<usize> {
