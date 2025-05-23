@@ -3,12 +3,12 @@ mod client;
 mod server;
 
 pub use client::SrpClient;
-pub use server::{PasswordVerificationResponse, SrpServer};
+pub use server::{SrpPasswordVerificationResponse, SrpServer};
 
 pub fn secure_remote_password(
     client: SrpClient,
     server: SrpServer,
-) -> Result<PasswordVerificationResponse, String> {
+) -> Result<SrpPasswordVerificationResponse, String> {
     // Client (user) sends ID and public key to server.
     let (big_i, big_a) = client.public_id();
 
@@ -66,6 +66,6 @@ mod tests {
 
         let result = secure_remote_password(client, server).unwrap();
 
-        assert_eq!(result, PasswordVerificationResponse::Ok);
+        assert_eq!(result, SrpPasswordVerificationResponse::Ok);
     }
 }

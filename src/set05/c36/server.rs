@@ -12,7 +12,7 @@ struct Verifier {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum PasswordVerificationResponse {
+pub enum SrpPasswordVerificationResponse {
     Ok,
     Failed,
 }
@@ -57,14 +57,14 @@ impl SrpServer {
         user_id: &str,
         user_pub_key: &BigUint,
         client_mac: &[u8],
-    ) -> Result<PasswordVerificationResponse, String> {
+    ) -> Result<SrpPasswordVerificationResponse, String> {
         let expected_key = self.compute_session(user_id, user_pub_key)?;
         let salt = self.user_verifier(user_id)?.salt;
         let expected_mac = HmacSha256::digest_message(&expected_key, &salt);
         if client_mac == expected_mac {
-            Ok(PasswordVerificationResponse::Ok)
+            Ok(SrpPasswordVerificationResponse::Ok)
         } else {
-            Ok(PasswordVerificationResponse::Failed)
+            Ok(SrpPasswordVerificationResponse::Failed)
         }
     }
 
