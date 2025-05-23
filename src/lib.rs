@@ -61,3 +61,4 @@ pub use set04::c32::hmac_sha1_timing_attack_with_rounds;
 pub use set05::c33::{generate_modexp_keypair, ModExpKeyPair};
 pub use set05::c34::{simulate_dh_parameter_injection_attack, Person};
 pub use set05::c35::simulate_dh_g_injection_attack;
+pub use set05::c36::{secure_remote_password, SrpClient, SrpServer};

@@ -1,6 +1,7 @@
 // Implement Diffie-Hellman
 use num_bigint::{BigUint, RandBigInt};
 
+#[derive(Debug, Clone)]
 pub struct ModExpKeyPair {
     pub pub_key: BigUint,
     pub priv_key: BigUint,
