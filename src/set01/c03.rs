@@ -154,7 +154,7 @@ mod tests {
     use crate::hex_to_bytes;
 
     #[test]
-    fn test_brute_force_xor() {
+    fn brute_force_xor_recovers_plaintext() {
         let input = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736";
         let bytes = hex_to_bytes(input).unwrap();
 

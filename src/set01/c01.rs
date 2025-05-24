@@ -66,7 +66,7 @@ mod tests {
     }
 
     #[test]
-    fn test_hex_to_bytes_valid() {
+    fn hex_to_bytes_valid() {
         let hex = "0A3F";
         let expected: Vec<u8> = vec![0x0A, 0x3F];
         let result = hex_to_bytes(hex).unwrap();
