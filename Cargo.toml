@@ -18,10 +18,4 @@ reqwest = "0.12"
 tokio = { version = "1", features = ["full"] }
 
 [dev-dependencies]
-criterion = "0.5.1"
 rstest = "0.23.0"
-
-[[bench]]
-name = "set01"
-harness = false
-required-features = []
