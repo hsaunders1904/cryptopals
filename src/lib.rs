@@ -72,3 +72,4 @@ pub use set05::c36::{
 pub use set05::c37::zero_key_secure_remote_password_attack;
 pub use set05::c38::{simplified_secure_remote_password_mitm_attack, SimplifiedSrpClient};
 pub use set05::c39::{generate_rsa_key_pair, rsa_apply, RsaKeyPair};
+pub use set05::c40::{rsa_broadcast_attack, RsaOracle};
