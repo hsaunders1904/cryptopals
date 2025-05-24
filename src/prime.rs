@@ -3,11 +3,19 @@
 use crate::prime_tables::SMALL_ODD_PRIMES;
 
 use num_bigint::{BigUint, RandBigInt};
-use rand::rngs::StdRng;
 
 const MILLER_RABIN_ROUNDS: u32 = 5;
 
-pub fn is_likely_prime(candidate_prime: &BigUint, miller_rabin_rng: &mut StdRng) -> bool {
+pub fn generate_prime(n_bits: u64, rng: &mut impl RandBigInt) -> BigUint {
+    loop {
+        let candidate = rng.gen_biguint(n_bits) | BigUint::from(1u64);
+        if is_likely_prime(&candidate, rng) {
+            return candidate;
+        }
+    }
+}
+
+pub fn is_likely_prime(candidate_prime: &BigUint, miller_rabin_rng: &mut impl RandBigInt) -> bool {
     let zero = BigUint::default();
     let one = BigUint::from(1u64);
     if candidate_prime == &zero || candidate_prime == &one {
@@ -35,7 +43,7 @@ pub fn is_likely_prime(candidate_prime: &BigUint, miller_rabin_rng: &mut StdRng)
     miller_rabin(candidate_prime, MILLER_RABIN_ROUNDS, miller_rabin_rng)
 }
 
-fn miller_rabin(candidate_prime: &BigUint, n_rounds: u32, rng: &mut StdRng) -> bool {
+fn miller_rabin(candidate_prime: &BigUint, n_rounds: u32, rng: &mut impl RandBigInt) -> bool {
     let zero = BigUint::default();
     let one = BigUint::from(1u64);
     let two = BigUint::from(2u64);
@@ -69,8 +77,17 @@ mod tests {
     use super::*;
 
     use num_traits::Num;
-    use rand::SeedableRng;
+    use rand::{rngs::StdRng, SeedableRng};
     use rstest::rstest;
+
+    #[test]
+    fn generate_prime_returns_a_prime() {
+        let mut rng = StdRng::from_seed([1; 32]);
+
+        let prime = generate_prime(16, &mut rng);
+
+        assert!(SMALL_ODD_PRIMES.map(|x| BigUint::from(x)).contains(&prime));
+    }
 
     #[rstest]
     #[case(BigUint::from(2u64))]

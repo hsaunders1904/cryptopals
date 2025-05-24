@@ -19,7 +19,7 @@ pub use base64::{base64_decode, base64_encode};
 pub use hash::Hasher;
 pub use hmac::{HmacSha1, HmacSha256};
 pub use md4::Md4;
-pub use prime::is_likely_prime;
+pub use prime::generate_prime;
 pub use sha1::Sha1;
 pub use sha256::Sha256;
 
@@ -71,3 +71,4 @@ pub use set05::c36::{
 };
 pub use set05::c37::zero_key_secure_remote_password_attack;
 pub use set05::c38::{simplified_secure_remote_password_mitm_attack, SimplifiedSrpClient};
+pub use set05::c39::{generate_rsa_key_pair, rsa_apply, RsaKeyPair};
