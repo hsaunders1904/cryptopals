@@ -3,6 +3,8 @@ mod base64;
 mod hash;
 mod hmac;
 mod md4;
+mod prime;
+mod prime_tables;
 mod sha1;
 mod sha256;
 
@@ -17,6 +19,7 @@ pub use base64::{base64_decode, base64_encode};
 pub use hash::Hasher;
 pub use hmac::{HmacSha1, HmacSha256};
 pub use md4::Md4;
+pub use prime::is_likely_prime;
 pub use sha1::Sha1;
 pub use sha256::Sha256;
 
