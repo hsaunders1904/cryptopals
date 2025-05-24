@@ -67,3 +67,4 @@ pub use set05::c36::{
     secure_remote_password, SrpClient, SrpPasswordVerificationResponse, SrpServer,
 };
 pub use set05::c37::zero_key_secure_remote_password_attack;
+pub use set05::c38::{simplified_secure_remote_password_mitm_attack, SimplifiedSrpClient};
